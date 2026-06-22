@@ -1,0 +1,79 @@
+@model Checklist.Mvc.ViewModels.StpDashboardViewModel
+@{
+    ViewData["Title"] = "STP";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">STP</h1>
+            <p class="cf-page-subtitle">Visao inicial do modulo de seguranca do trabalho no MVC.</p>
+        </div>
+        <div class="cf-management-actions">
+            <a asp-action="NewChecklist" class="btn btn-primary">Nova inspecao</a>
+            <a asp-controller="StpDocuments" asp-action="Index" class="btn btn-outline-secondary">Documentos</a>
+        </div>
+    </div>
+
+    <section class="cf-metrics">
+        <article class="cf-metric">
+            <div class="cf-metric-value">@Model.AreaCount</div>
+            <div class="cf-metric-label">Areas de inspecao</div>
+        </article>
+        <article class="cf-metric">
+            <div class="cf-metric-value">@Model.ChecklistCount</div>
+            <div class="cf-metric-label">Checklists STP</div>
+        </article>
+        <article class="cf-metric">
+            <div class="cf-metric-value">@Model.CompanyCount</div>
+            <div class="cf-metric-label">Empresas</div>
+        </article>
+        <article class="cf-metric">
+            <div class="cf-metric-value">@Model.EmployeeDocumentCount</div>
+            <div class="cf-metric-label">Documentos de funcionarios</div>
+        </article>
+    </section>
+
+    <section class="cf-surface cf-table-section">
+        <div class="cf-table-toolbar">
+            <div class="cf-table-titleblock">
+                <h2 class="cf-section-title mb-0">Ultimos checklists STP</h2>
+                <span class="cf-page-subtitle">Acesso rapido ao historico recente.</span>
+            </div>
+            <div class="cf-management-actions">
+                <a asp-action="Areas" class="btn btn-outline-primary">Areas</a>
+                <a asp-action="Checklists" class="btn btn-outline-primary">Checklists</a>
+                <a asp-action="NewChecklist" class="btn btn-primary">Nova inspecao</a>
+            </div>
+        </div>
+        <div class="cf-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Template</th>
+                        <th>Area</th>
+                        <th>Responsavel</th>
+                        <th>Data</th>
+                        <th>Check</th>
+                        <th>X</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.RecentChecklists)
+                    {
+                        <tr class="cf-data-row">
+                            <td><strong>@item.TemplateCode</strong><br /><span class="text-secondary">@item.TemplateName</span></td>
+                            <td>@item.InspectionAreaName</td>
+                            <td>@item.ResponsibleName</td>
+                            <td>@item.CompletedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.TotalCheck</td>
+                            <td>@item.TotalX</td>
+                            <td class="text-end"><a asp-action="Details" asp-route-id="@item.Id" class="cf-link">Abrir</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

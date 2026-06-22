@@ -1,218 +1,164 @@
 # CheckFlow
 
-Versão atual: `1.0.0`
+Versao atual: `1.0.0`
 
-Sistema para checklist operacional de empilhadeiras, supervisão de não conformidades, inspeções de segurança do trabalho e administração de catálogos operacionais.
+Sistema para checklist operacional de empilhadeiras, supervisao de nao conformidades, inspecoes STP e administracao de catalogos operacionais.
 
-## Escopo funcional
+## Arquitetura atual
 
-- checklist operacional autenticado por operador
-- supervisão operacional por setor
-- tratativa e histórico de itens não conformes
-- inspeções STP por área
-- controle documental STP por empresa e funcionário
-- administração de setores, equipamentos, operadores, templates e acessos
-- fechamento mensal de checklists
+O projeto adota uma unica aplicacao ASP.NET Core MVC como ponto de entrada.
 
-## Arquitetura
+- UI, autenticacao e fluxo HTTP: `mvc/src/Checklist.Mvc`
+- regras de aplicacao: `mvc/src/Checklist.Application`
+- dominio: `mvc/src/Checklist.Domain`
+- persistencia, identidade e integracoes: `mvc/src/Checklist.Infrastructure`
+- banco principal: SQL Server
+- autenticacao administrativa: cookie + Active Directory em Windows
+- autenticacao operacional: cookie + credenciais do operador persistidas no banco
 
-### Backend
+## Modulos
 
-- .NET 10
-- ASP.NET Core Web API
-- Entity Framework Core
-- MySQL
-- JWT Bearer Authentication
+- Operacao: login do operador, leitura por QR ID, abertura e envio de checklist
+- Supervisao: dashboard, historico, detalhe de checklist e painel de itens non-compliant
+- Catalogos: categorias, templates, operadores e equipamentos
+- Master: setores, supervisores e inspetores
+- STP: dashboard, areas, checklists e documentos
+- Fechamento mensal: consolidacao e exportacao
 
-Estrutura principal:
+## Estrutura do repositorio
 
-- `Controllers/`
-- `Models/`
-- `Dtos/`
-- `Data/`
-- `Security/`
-- `Support/`
-- `Options/`
+```text
+empilhadeiras-checklist/
+|-- mvc/
+|   |-- src/
+|   |   |-- Checklist.Application/
+|   |   |-- Checklist.Domain/
+|   |   |-- Checklist.Infrastructure/
+|   |   `-- Checklist.Mvc/
+|   `-- Checklist.Mvc.slnx
+|-- infra/
+|-- docs/
+|-- CHANGELOG.md
+|-- CONTRIBUTING.md
+|-- DEPLOY.md
+`-- README.md
+```
 
-### Frontend
+## Configuracao
 
-- React 19
-- Vite
-- React Router
-- TypeScript
+### Banco
 
-Estrutura principal:
+O MVC usa connection string direta.
 
-- `src/pages/`
-- `src/types.ts`
-- `src/api.ts`
-- `src/operator-api.ts`
+Ordem de resolucao:
 
-## Módulos
+1. `ConnectionStrings__Default`
+2. `ConnectionStrings:Default`
+3. `ConnectionStrings:AppDbConnectionString`
 
-### Operacional
+Exemplo local:
 
-- autenticação de operador
-- leitura de equipamento por QR Code
-- checklist por categoria de equipamento
-- assinatura e envio
+```env
+ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;
+```
 
-### Supervisão
+### Autenticacao
 
-- dashboard por setor
-- histórico de checklists
-- painel de itens não conformes
-- atribuição, andamento e conclusão de tratativas
-- fechamento mensal
+Secao usada pelo projeto:
 
-### STP
+```json
+{
+  "Authentication": {
+    "Mode": "DevelopmentStub"
+  },
+  "ActiveDirectory": {
+    "Domain": "",
+    "Container": ""
+  }
+}
+```
 
-- catálogo de áreas de inspeção
-- inspeção de área em tela operacional dedicada
-- histórico STP
-- controle de documentos
+Modos suportados:
 
-### Administração
+- `DevelopmentStub`: supervisor e operador de desenvolvimento
+- `ActiveDirectory`: login administrativo validado no AD; exige execucao em Windows
 
-- setores
-- categorias de equipamento
-- equipamentos
-- operadores
-- templates
-- usuários supervisores
-- usuários inspetores
+### Credenciais locais padrao
 
-## Perfis de acesso
+Em `Development`, o projeto sobe com stub local:
+
+- supervisor: `supervisor.teste` / `123456`
+- operador: `GabrielCandido` / `123456`
+
+## Execucao local
+
+### MVC com SQL Server local
+
+Voce ja pode rodar sem Docker Compose.
+
+Se quiser usar a connection string do `appsettings.Development.json`, basta:
+
+```powershell
+dotnet run --project mvc/src/Checklist.Mvc/Checklist.Mvc.csproj --urls http://localhost:5204
+```
+
+Se preferir sobrescrever por ambiente:
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+$env:ConnectionStrings__Default="Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;"
+dotnet run --project mvc/src/Checklist.Mvc/Checklist.Mvc.csproj --urls http://localhost:5204
+```
+
+### MVC sem banco configurado
+
+Se nenhuma conexao for informada, a aplicacao usa banco em memoria para desenvolvimento local. Esse modo serve para navegacao e refinamento de UI, nao para validar persistencia real em SQL Server.
+
+```powershell
+$env:ASPNETCORE_ENVIRONMENT="Development"
+dotnet run --project mvc/src/Checklist.Mvc/Checklist.Mvc.csproj --urls http://localhost:5204
+```
+
+## Build
+
+```powershell
+dotnet build Checklist.Mvc.slnx
+```
+
+No estado atual, ainda nao existe projeto de testes dedicado dentro de `mvc/tests`.
+
+## Persistencia
+
+- Provider principal: SQL Server via EF Core
+- `AppDbContext`: `mvc/src/Checklist.Infrastructure/Data/AppDbContext.cs`
+- Quando nao ha conexao configurada, o projeto cai para banco em memoria
+- O bootstrap local usa `EnsureCreatedAsync` e seed minimo para o fluxo de desenvolvimento
+
+No estado atual, a linha MVC ainda nao possui migrations versionadas equivalentes a um fluxo formal de producao. Enquanto isso, o schema local e criado pelo bootstrap da propria aplicacao.
+
+## Perfis e politicas
+
+Perfis principais:
 
 - `Master`
 - `Supervisor`
-- `Inspetor`
-- `Operador`
+- `Inspector`
+- `Operator`
 
-Policies principais:
+Politicas principais:
 
 - `MasterReady`
 - `SectorSupervisorReady`
 - `SafetyWorkReady`
 - `MaterialsInspectionReady`
+- `OperatorAuthenticated`
 - `OperatorChecklistReady`
 
-## Estrutura do repositório
+## Documentacao complementar
 
-```text
-empilhadeiras-checklist/
-|-- backend/
-|   `-- Checklist.Api/
-|-- frontend/
-|   `-- checklist-web/
-|-- docs/
-|-- infra/
-|-- CHANGELOG.md
-|-- DEPLOY.md
-|-- empilhadeiras-checklist.sln
-`-- README.md
-```
-
-## Banco de dados
-
-Entidades centrais:
-
-- `Setor`
-- `UsuarioSupervisor`
-- `UsuarioSupervisorModulo`
-- `Operador`
-- `CategoriaEquipamento`
-- `Equipamento`
-- `Checklist`
-- `ChecklistItem`
-- `ChecklistItemTemplate`
-- `ChecklistItemAcao`
-- `StpAreaInspecao`
-- `StpAreaChecklist`
-- `StpAreaChecklistItem`
-- `StpDocumentoEmpresa`
-- `StpDocumentoFuncionario`
-
-## Configuração
-
-Variáveis mínimas da API:
-
-- `ConnectionStrings__Default`
-- `Auth__JwtKey`
-- `Auth__Issuer`
-- `Auth__Audience`
-
-Variáveis recomendadas:
-
-- `Cors__AllowedOrigins`
-- `ASPNETCORE_ENVIRONMENT`
-
-Exemplo:
-
-```env
-ConnectionStrings__Default=Server=HOST;Port=3306;Database=CHECKFLOW;User ID=USUARIO;Password=SENHA;SslMode=Required;
-Auth__JwtKey=CHAVE_FORTE_DA_APLICACAO
-Auth__Issuer=CheckFlow.Api
-Auth__Audience=CheckFlow.Web
-```
-
-Variável principal do frontend:
-
-```env
-VITE_API_BASE_URL=http://localhost:5204
-```
-
-## Execução local
-
-### Backend
-
-```powershell
-$env:Auth__JwtKey='UMA_CHAVE_LOCAL_FORTE'
-$env:ConnectionStrings__Default='Server=localhost;Port=3306;Database=CheckFlow;User ID=usuario;Password=senha;SslMode=Required;AllowPublicKeyRetrieval=True;'
-dotnet run --no-build --project backend/Checklist.Api/Checklist.Api.csproj --urls http://localhost:5204
-```
-
-Healthcheck:
-
-```text
-http://localhost:5204/health
-```
-
-### Frontend
-
-```powershell
-cd frontend/checklist-web
-$env:VITE_API_BASE_URL='http://localhost:5204'
-npm ci
-npm run dev
-```
-
-## Build
-
-### Backend
-
-```powershell
-dotnet build backend/Checklist.Api/Checklist.Api.csproj
-dotnet test backend/Checklist.Api.Tests/Checklist.Api.Tests.csproj
-```
-
-### Frontend
-
-```powershell
-cd frontend/checklist-web
-npm run build
-```
-
-## Observabilidade
-
-Endpoint exposto:
-
-- `GET /health`
-
-## Documentação complementar
-
-- [CHANGELOG.md](CHANGELOG.md)
+- [CONTRIBUTING.md](CONTRIBUTING.md)
 - [DEPLOY.md](DEPLOY.md)
-- [docs/mysql-corporate-migration-guide.md](docs/mysql-corporate-migration-guide.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/api-overview.md](docs/api-overview.md)
+- [docs/sqlserver-corporate-migration-guide.md](docs/sqlserver-corporate-migration-guide.md)
+- [infra/README.md](infra/README.md)

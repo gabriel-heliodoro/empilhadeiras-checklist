@@ -1,0 +1,104 @@
+@model Checklist.Mvc.ViewModels.CategoryManagementPageViewModel
+@{
+    ViewData["Title"] = "Categorias";
+    var isEditing = Model.Form.Id.HasValue;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Categorias de equipamento</h1>
+        </div>
+        <div class="cf-toolbar-summary">
+            <span class="cf-summary-chip">@Model.Items.Count categorias</span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <div class="cf-management-grid">
+        <section class="cf-surface cf-surface-padded">
+            <h2 class="cf-section-title">@(isEditing ? "Editar categoria" : "Nova categoria")</h2>
+            <form asp-action="SaveCategory" method="post" class="cf-management-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="Form.Id" type="hidden" />
+                <div>
+                    <label asp-for="Form.Name" class="cf-field-label"></label>
+                    <input asp-for="Form.Name" />
+                    <span asp-validation-for="Form.Name" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Form.MonthlyClosureModel" class="cf-field-label"></label>
+                    <select asp-for="Form.MonthlyClosureModel" class="form-select">
+                        <option value="None">Nenhum</option>
+                        <option value="CombustionForklift">Empilhadeira a combustao</option>
+                        <option value="ElectricForklift">Empilhadeira eletrica</option>
+                    </select>
+                    <span asp-validation-for="Form.MonthlyClosureModel" class="text-danger"></span>
+                </div>
+                <label class="cf-checkbox">
+                    <input asp-for="Form.IsActive" type="checkbox" />
+                    <span>Categoria ativa para novos equipamentos e templates.</span>
+                </label>
+                <div class="cf-management-actions">
+                    <button type="submit" class="btn btn-primary">@(isEditing ? "Salvar alteracoes" : "Criar categoria")</button>
+                    @if (isEditing)
+                    {
+                        <a asp-action="Categories" class="btn btn-outline-secondary">Limpar formulario</a>
+                    }
+                </div>
+            </form>
+        </section>
+
+        <section class="cf-surface cf-table-section">
+            <div class="cf-table-toolbar">
+                <div class="cf-table-titleblock">
+                    <h2 class="cf-section-title mb-0">Categorias cadastradas</h2>
+                    <span class="cf-page-subtitle">Exclusao bloqueada quando houver equipamentos vinculados.</span>
+                </div>
+            </div>
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Categoria</th>
+                            <th>Modelo</th>
+                            <th>Templates</th>
+                            <th>Equipamentos</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="cf-data-row">
+                                <td><strong>@item.Name</strong></td>
+                                <td>@item.MonthlyClosureModel</td>
+                                <td>@item.TemplateCount</td>
+                                <td>@item.EquipmentCount</td>
+                                <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativa" : "Inativa")</span></td>
+                                <td class="text-end">
+                                    <div class="cf-management-table-actions justify-content-end">
+                                        <a asp-action="Categories" asp-route-editId="@item.Id" class="cf-link">Editar</a>
+                                        <form asp-action="DeleteCategory" asp-route-id="@item.Id" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-outline-secondary btn-sm">Excluir</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

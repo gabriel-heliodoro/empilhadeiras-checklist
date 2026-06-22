@@ -1,0 +1,173 @@
+@model Checklist.Mvc.ViewModels.TemplateManagementPageViewModel
+@{
+    ViewData["Title"] = "Templates";
+    var isEditing = Model.Form.Id.HasValue;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header cf-catalog-page-header">
+        <div>
+            <h1 class="cf-page-title">Templates</h1>
+            <p class="cf-page-subtitle">Itens operacionais por categoria, na ordem exata do checklist do operador.</p>
+        </div>
+        <div class="cf-catalog-header-actions">
+            <span class="cf-summary-chip">@Model.Items.Count itens</span>
+            <a href="#template-form" class="btn btn-primary">@(isEditing ? "Editar item" : "Novo item")</a>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <div class="cf-catalog-stack">
+        <section class="cf-surface cf-surface-padded cf-catalog-table-card">
+            <div class="cf-catalog-card-head">
+                <div>
+                    <h2 class="cf-section-title mb-0">Categoria</h2>
+                </div>
+            </div>
+            @if (Model.CategoryOptions.Count == 0)
+            {
+                <div class="cf-empty">Cadastre uma categoria antes de criar os itens do template.</div>
+            }
+            else
+            {
+                <form asp-action="Templates" method="get" class="cf-management-form cf-catalog-category-form">
+                    <div>
+                        <label class="cf-field-label">Selecionar</label>
+                        <select name="categoryId" class="form-select" onchange="this.form.submit()">
+                            @foreach (var option in Model.CategoryOptions)
+                            {
+                                <option value="@option.Id" selected="@(Model.SelectedCategoryId == option.Id)">@option.Label</option>
+                            }
+                        </select>
+                    </div>
+                </form>
+            }
+        </section>
+
+        <section class="cf-surface cf-table-section cf-catalog-table-card">
+            <div class="cf-catalog-card-head">
+                <div class="cf-table-titleblock">
+                    <h2 class="cf-section-title mb-0">Itens</h2>
+                </div>
+                <span class="cf-catalog-counter-badge">@Model.Items.Count</span>
+            </div>
+            <div class="cf-table-wrap">
+                <table class="cf-catalog-table">
+                    <thead>
+                        <tr>
+                            <th>Ordem</th>
+                            <th>Descricao</th>
+                            <th>Instrucao</th>
+                            <th>Status</th>
+                            <th>Acoes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5">
+                                    <div class="cf-empty">
+                                        @(Model.SelectedCategoryId.HasValue
+                                            ? "Nenhum item cadastrado para esta categoria."
+                                            : "Nenhuma categoria selecionada.")
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr class="cf-data-row">
+                                    <td><span class="cf-catalog-order-pill">#@item.Order</span></td>
+                                    <td class="cf-catalog-description-cell"><strong>@item.Description</strong></td>
+                                    <td class="cf-catalog-instruction-cell">@(string.IsNullOrWhiteSpace(item.Instruction) ? "-" : item.Instruction)</td>
+                                    <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>
+                                    <td class="text-end">
+                                        <div class="cf-catalog-actions cf-catalog-actions-stack">
+                                            <a asp-action="Templates" asp-route-categoryId="@Model.SelectedCategoryId" asp-route-editId="@item.Id" asp-fragment="template-form" class="btn btn-outline-secondary btn-sm">Editar</a>
+                                            <form asp-action="DeleteTemplate" asp-route-id="@item.Id" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="categoryId" value="@Model.SelectedCategoryId" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">Excluir</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="template-form" class="cf-surface cf-surface-padded cf-catalog-form-card">
+            <div class="cf-catalog-card-head">
+                <div>
+                    <h2 class="cf-section-title mb-0">@(isEditing ? "Editar item" : "Novo item")</h2>
+                    <p class="cf-page-subtitle">Cadastro do item exatamente como ele sera apresentado no checklist.</p>
+                </div>
+                @if (isEditing && Model.SelectedCategoryId.HasValue)
+                {
+                    <a asp-action="Templates" asp-route-categoryId="@Model.SelectedCategoryId" class="btn btn-outline-secondary">Novo item</a>
+                }
+            </div>
+            @if (Model.CategoryOptions.Count == 0)
+            {
+                <div class="cf-empty">Sem categoria ativa no setor para vincular este template.</div>
+            }
+            else
+            {
+                <form asp-action="SaveTemplate" method="post" class="cf-management-form cf-catalog-form-grid">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="Form.Id" type="hidden" />
+                    <div>
+                        <label asp-for="Form.CategoryId" class="cf-field-label"></label>
+                        <select asp-for="Form.CategoryId" class="form-select">
+                            @foreach (var option in Model.CategoryOptions)
+                            {
+                                <option value="@option.Id">@option.Label</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Form.CategoryId" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.Order" class="cf-field-label"></label>
+                        <input asp-for="Form.Order" />
+                        <span asp-validation-for="Form.Order" class="text-danger"></span>
+                    </div>
+                    <div class="cf-catalog-form-span">
+                        <label asp-for="Form.Description" class="cf-field-label"></label>
+                        <textarea asp-for="Form.Description" rows="3"></textarea>
+                        <span asp-validation-for="Form.Description" class="text-danger"></span>
+                    </div>
+                    <div class="cf-catalog-form-span">
+                        <label asp-for="Form.Instruction" class="cf-field-label"></label>
+                        <textarea asp-for="Form.Instruction" rows="4"></textarea>
+                        <span asp-validation-for="Form.Instruction" class="text-danger"></span>
+                    </div>
+                    <label class="cf-checkbox cf-catalog-form-span">
+                        <input asp-for="Form.IsActive" type="checkbox" />
+                        <span>Item ativo para novos checklists.</span>
+                    </label>
+                    <div class="cf-management-actions cf-catalog-form-span">
+                        <button type="submit" class="btn btn-primary">@(isEditing ? "Salvar alteracoes" : "Criar item")</button>
+                        @if (Model.SelectedCategoryId.HasValue)
+                        {
+                            <a asp-action="Templates" asp-route-categoryId="@Model.SelectedCategoryId" class="btn btn-outline-secondary">Limpar formulario</a>
+                        }
+                    </div>
+                </form>
+            }
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

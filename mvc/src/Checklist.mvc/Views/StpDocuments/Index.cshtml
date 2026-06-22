@@ -1,0 +1,79 @@
+@model Checklist.Mvc.ViewModels.StpCompanyListPageViewModel
+@{
+    ViewData["Title"] = "Documentos STP";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Documentos STP</h1>
+            <p class="cf-page-subtitle">Empresas e documentacoes vinculadas ao setor do inspetor.</p>
+        </div>
+        <div class="cf-toolbar-summary">
+            <span class="cf-summary-chip">@Model.Items.Count empresas</span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+    }
+
+    <div class="cf-management-grid">
+        <section class="cf-surface cf-surface-padded">
+            <h2 class="cf-section-title">Nova empresa</h2>
+            <form asp-action="SaveCompany" method="post" class="cf-management-form">
+                @Html.AntiForgeryToken()
+                <div>
+                    <label asp-for="Form.Name" class="cf-field-label"></label>
+                    <input asp-for="Form.Name" />
+                    <span asp-validation-for="Form.Name" class="text-danger"></span>
+                </div>
+                <label class="cf-checkbox">
+                    <input asp-for="Form.IsActive" type="checkbox" />
+                    <span>Empresa ativa</span>
+                </label>
+                <div class="cf-management-actions">
+                    <button type="submit" class="btn btn-primary">Cadastrar empresa</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="cf-surface cf-table-section">
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>Status</th>
+                            <th>Documentos</th>
+                            <th>Funcionarios</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="cf-data-row">
+                                <td><strong>@item.Name</strong></td>
+                                <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-danger")">@(item.IsActive ? "Ativa" : "Inativa")</span></td>
+                                <td>@item.TotalDocuments</td>
+                                <td>@item.TotalEmployees</td>
+                                <td class="text-end"><a asp-action="Company" asp-route-companyId="@item.Id" class="cf-link">Abrir</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

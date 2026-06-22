@@ -1,0 +1,173 @@
+@model Checklist.Mvc.ViewModels.ChecklistListViewModel
+@{
+    ViewData["Title"] = "Checklists";
+
+    var activeFilters = 0;
+    if (!string.IsNullOrWhiteSpace(Model.Filters.DataInicio))
+    {
+        activeFilters++;
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Filters.DataFim))
+    {
+        activeFilters++;
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Filters.Status))
+    {
+        activeFilters++;
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Filters.Operator))
+    {
+        activeFilters++;
+    }
+
+    var statusLabel = Model.Filters.Status switch
+    {
+        "ok" => "Somente conformes",
+        "nok" => "Only non-compliant",
+        _ => "Todos os status"
+    };
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Checklists realizados</h1>
+        </div>
+    </div>
+
+    <section class="cf-surface cf-surface-padded cf-filter-shell">
+        <div class="cf-filter-header">
+            <div>
+                <h2 class="cf-dashboard-group-title">Filtrar Checklists</h2>
+            </div>
+            <div class="cf-toolbar-summary">
+                <span class="cf-summary-chip">@Model.Items.Count resultado(s)</span>
+                <span class="cf-summary-chip">@(activeFilters) filtro(s) ativo(s)</span>
+                <span class="cf-summary-chip">@statusLabel</span>
+            </div>
+        </div>
+
+        <form method="get" asp-action="Index" class="cf-list-grid">
+            <div class="cf-filter-grid">
+                <div>
+                    <label class="form-label fw-semibold" for="DataInicio">Data inicial</label>
+                    <input class="form-control" type="date" id="DataInicio" name="DataInicio" value="@Model.Filters.DataInicio" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="DataFim">Data final</label>
+                    <input class="form-control" type="date" id="DataFim" name="DataFim" value="@Model.Filters.DataFim" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="Status">Status</label>
+                    <select class="form-select" id="Status" name="Status">
+                        <option value="">Todos</option>
+                        @if (Model.Filters.Status == "ok")
+                        {
+                            <option value="ok" selected>Conforme</option>
+                        }
+                        else
+                        {
+                            <option value="ok">Conforme</option>
+                        }
+
+                        @if (Model.Filters.Status == "nok")
+                        {
+                            <option value="nok" selected>Não conforme</option>
+                        }
+                        else
+                        {
+                            <option value="nok">Não conforme</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="Operator">Operador ou matrícula</label>
+                    <input class="form-control" type="text" id="Operator" name="Operator" value="@Model.Filters.Operator"/>
+                </div>
+            </div>
+
+            <div class="cf-filter-actions">
+                <button type="submit" class="cf-button cf-button-primary">Buscar</button>
+                <a asp-action="Index" class="cf-button cf-button-secondary">Limpar</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="cf-surface cf-table-section">
+        <div class="cf-table-toolbar">
+            <div class="cf-table-titleblock">
+                <h2 class="cf-dashboard-group-title">Resultados</h2>
+            </div>
+            <span class="cf-table-count">@Model.Items.Count</span>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="cf-empty">
+                Nenhum checklist encontrado com os filtros atuais.
+            </div>
+        }
+        else
+        {
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Equipment</th>
+                            <th>Operator</th>
+                            <th>Criado em</th>
+                            <th>Items</th>
+                            <th>Status</th>
+                            <th class="text-end">Acao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="cf-data-row">
+                            <td>
+                                <div class="cf-table-entity">
+                                    <span class="cf-badge cf-badge-blue">@item.EquipmentCode</span>
+                                    <div class="cf-table-entity-copy">
+                                        <div class="cf-card-title">@item.EquipmentDescription</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="cf-table-entity-copy">
+                                    <div class="cf-card-title">@item.OperatorName</div>
+                                    <div class="cf-card-subtitle">@item.OperatorRegistration</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="cf-table-entity-copy">
+                                    <div class="cf-card-title">@item.CreatedAtDisplay</div>
+                                    <div class="cf-card-subtitle">Registro do checklist</div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="cf-items-metrics">
+                                    <span class="cf-inline-stat">Total @item.TotalItems</span>
+                                    <span class="cf-inline-stat cf-inline-stat-ok">OK @item.ItemsOk</span>
+                                    <span class="cf-inline-stat cf-inline-stat-nok">NOK @item.ItemsNok</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="cf-badge @item.StatusCssClass">@item.StatusLabel</span>
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="cf-button cf-button-secondary">
+                                    Abrir
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>

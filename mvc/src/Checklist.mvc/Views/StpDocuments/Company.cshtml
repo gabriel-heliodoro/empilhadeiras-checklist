@@ -1,0 +1,167 @@
+@model Checklist.Mvc.ViewModels.StpCompanyDetailsPageViewModel
+@{
+    ViewData["Title"] = "Empresa STP";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">@Model.CompanyForm.Name</h1>
+            <p class="cf-page-subtitle">Detalhes da empresa, funcionarios e documentos.</p>
+        </div>
+        <div class="cf-management-actions">
+            <a asp-action="Index" class="btn btn-outline-secondary">Voltar</a>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+    }
+
+    <div class="cf-management-grid">
+        <section class="cf-management-stack">
+            <section class="cf-surface cf-surface-padded">
+                <h2 class="cf-section-title">Dados da empresa</h2>
+                <form asp-action="Company" asp-route-companyId="@Model.CompanyId" method="post" class="cf-management-form">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label asp-for="CompanyForm.Name" class="cf-field-label"></label>
+                        <input asp-for="CompanyForm.Name" />
+                    </div>
+                    <label class="cf-checkbox">
+                        <input asp-for="CompanyForm.IsActive" type="checkbox" />
+                        <span>Empresa ativa</span>
+                    </label>
+                    <div class="cf-management-actions">
+                        <button type="submit" class="btn btn-primary">Salvar empresa</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="cf-surface cf-surface-padded">
+                <h2 class="cf-section-title">Novo funcionario</h2>
+                <form asp-action="SaveEmployee" asp-route-companyId="@Model.CompanyId" method="post" class="cf-management-form">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="EmployeeForm.CompanyId" type="hidden" />
+                    <div>
+                        <label asp-for="EmployeeForm.Name" class="cf-field-label"></label>
+                        <input asp-for="EmployeeForm.Name" />
+                    </div>
+                    <div>
+                        <label asp-for="EmployeeForm.Role" class="cf-field-label"></label>
+                        <input asp-for="EmployeeForm.Role" />
+                    </div>
+                    <label class="cf-checkbox">
+                        <input asp-for="EmployeeForm.IsActive" type="checkbox" />
+                        <span>Funcionario ativo</span>
+                    </label>
+                    <div class="cf-management-actions">
+                        <button type="submit" class="btn btn-primary">Cadastrar funcionario</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="cf-surface cf-surface-padded">
+                <h2 class="cf-section-title">Upload de documento</h2>
+                <form asp-action="UploadCompanyDocument" asp-route-companyId="@Model.CompanyId" method="post" enctype="multipart/form-data" class="cf-management-form">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label asp-for="UploadForm.Name" class="cf-field-label"></label>
+                        <input asp-for="UploadForm.Name" />
+                    </div>
+                    <div>
+                        <label asp-for="UploadForm.File" class="cf-field-label"></label>
+                        <input asp-for="UploadForm.File" type="file" />
+                    </div>
+                    <div class="cf-management-actions">
+                        <button type="submit" class="btn btn-primary">Enviar documento</button>
+                    </div>
+                </form>
+            </section>
+        </section>
+
+        <section class="cf-management-stack">
+            <section class="cf-surface cf-table-section">
+                <div class="cf-table-toolbar">
+                    <div class="cf-table-titleblock">
+                        <h2 class="cf-section-title mb-0">Documentos</h2>
+                    </div>
+                    <div class="cf-toolbar-summary">
+                        <span class="cf-summary-chip">@Model.Documents.Count arquivos</span>
+                    </div>
+                </div>
+                <div class="cf-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Documento</th>
+                                <th>Arquivo</th>
+                                <th>Data</th>
+                                <th>Tamanho</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Documents)
+                            {
+                                <tr class="cf-data-row">
+                                    <td>@item.Name</td>
+                                    <td>@item.OriginalFileName</td>
+                                    <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@(item.SizeInBytes < 1024 ? $"{item.SizeInBytes} B" : $"{(item.SizeInBytes / 1024d):0.0} KB")</td>
+                                    <td class="text-end"><a asp-action="CompanyFile" asp-route-documentId="@item.Id" class="cf-link">Visualizar</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="cf-surface cf-table-section">
+                <div class="cf-table-toolbar">
+                    <div class="cf-table-titleblock">
+                        <h2 class="cf-section-title mb-0">Funcionarios</h2>
+                    </div>
+                    <div class="cf-toolbar-summary">
+                        <span class="cf-summary-chip">@Model.Employees.Count pessoas</span>
+                    </div>
+                </div>
+                <div class="cf-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Cargo</th>
+                                <th>Status</th>
+                                <th>Documentos</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Employees)
+                            {
+                                <tr class="cf-data-row">
+                                    <td><strong>@item.Name</strong></td>
+                                    <td>@item.Role</td>
+                                    <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-danger")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>
+                                    <td>@item.TotalDocuments</td>
+                                    <td class="text-end"><a asp-action="Employee" asp-route-employeeId="@item.Id" class="cf-link">Abrir</a></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,94 @@
+@model Checklist.Mvc.ViewModels.StpAreaManagementPageViewModel
+@{
+    ViewData["Title"] = "Areas STP";
+    var isEditing = Model.Form.Id.HasValue;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Areas de inspecao STP</h1>
+            <p class="cf-page-subtitle">Catalogo de areas com supervisor responsavel.</p>
+        </div>
+        <div class="cf-toolbar-summary">
+            <span class="cf-summary-chip">@Model.Items.Count areas</span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <div class="cf-management-grid">
+        <section class="cf-surface cf-surface-padded">
+            <h2 class="cf-section-title">@(isEditing ? "Editar area" : "Nova area")</h2>
+            <form asp-action="SaveArea" method="post" class="cf-management-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="Form.Id" type="hidden" />
+                <div>
+                    <label asp-for="Form.Name" class="cf-field-label"></label>
+                    <input asp-for="Form.Name" />
+                    <span asp-validation-for="Form.Name" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Form.ResponsibleSupervisorId" class="cf-field-label"></label>
+                    <select asp-for="Form.ResponsibleSupervisorId" class="form-select">
+                        <option value="">Selecione</option>
+                        @foreach (var option in Model.ResponsibleOptions)
+                        {
+                            <option value="@option.Id">@option.Label</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Form.ResponsibleSupervisorId" class="text-danger"></span>
+                </div>
+                <label class="cf-checkbox">
+                    <input asp-for="Form.IsActive" type="checkbox" />
+                    <span>Area ativa para novos checklists.</span>
+                </label>
+                <div class="cf-management-actions">
+                    <button type="submit" class="btn btn-primary">@(isEditing ? "Salvar alteracoes" : "Criar area")</button>
+                    @if (isEditing)
+                    {
+                        <a asp-action="Areas" class="btn btn-outline-secondary">Limpar formulario</a>
+                    }
+                </div>
+            </form>
+        </section>
+
+        <section class="cf-surface cf-table-section">
+            <div class="cf-table-toolbar">
+                <div class="cf-table-titleblock">
+                    <h2 class="cf-section-title mb-0">Areas cadastradas</h2>
+                </div>
+            </div>
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Area</th>
+                            <th>Responsavel</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="cf-data-row">
+                                <td><strong>@item.Name</strong></td>
+                                <td>@item.ResponsibleSupervisorName</td>
+                                <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativa" : "Inativa")</span></td>
+                                <td class="text-end"><a asp-action="Areas" asp-route-editId="@item.Id" class="cf-link">Editar</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

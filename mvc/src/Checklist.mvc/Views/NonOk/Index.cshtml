@@ -1,0 +1,39 @@
+@model Checklist.Mvc.ViewModels.NonOkDashboardViewModel
+@{
+    ViewData["Title"] = "Items non-compliant";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Tratamento de itens Não-OK</h1>
+            <p class="cf-page-subtitle">Painel do workflow de tratativas.</p>
+        </div>
+    </div>
+
+    <div class="cf-naook-grid">
+        <a class="cf-naook-card cf-naook-card-danger" asp-controller="NonOk" asp-action="Lista" asp-route-status="pending">
+            <div class="cf-naook-card-top">
+                <span class="cf-naook-card-title">Pendentes</span>
+                <span class="cf-naook-card-arrow" aria-hidden="true">&rarr;</span>
+            </div>
+            <strong class="cf-naook-card-count">@Model.PendingCount</strong>
+        </a>
+
+        <a class="cf-naook-card cf-naook-card-primary" asp-controller="NonOk" asp-action="Lista" asp-route-status="in-progress">
+            <div class="cf-naook-card-top">
+                <span class="cf-naook-card-title">Em andamento</span>
+                <span class="cf-naook-card-arrow" aria-hidden="true">&rarr;</span>
+            </div>
+            <strong class="cf-naook-card-count">@Model.InProgressCount</strong>
+        </a>
+
+        <a class="cf-naook-card cf-naook-card-success" asp-controller="NonOk" asp-action="Lista" asp-route-status="completed">
+            <div class="cf-naook-card-top">
+                <span class="cf-naook-card-title">Completos</span>
+                <span class="cf-naook-card-arrow" aria-hidden="true">&rarr;</span>
+            </div>
+            <strong class="cf-naook-card-count">@Model.CompletedCount</strong>
+        </a>
+    </div>
+</div>

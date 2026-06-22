@@ -1,0 +1,74 @@
+@model Checklist.Mvc.ViewModels.StpChecklistListPageViewModel
+@{
+    ViewData["Title"] = "Checklists STP";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Checklists STP</h1>
+            <p class="cf-page-subtitle">Historico do modulo de seguranca do trabalho.</p>
+        </div>
+        <div class="cf-management-actions">
+            <span class="cf-summary-chip">@Model.Items.Count registros</span>
+            <a asp-action="NewChecklist" class="btn btn-primary">Nova inspecao</a>
+        </div>
+    </div>
+
+    <section class="cf-surface cf-surface-padded">
+        <form asp-action="Checklists" method="get" class="cf-filter-shell">
+            <div class="cf-filter-grid">
+                <div>
+                    <label asp-for="Filters.StartDate" class="cf-field-label"></label>
+                    <input asp-for="Filters.StartDate" />
+                </div>
+                <div>
+                    <label asp-for="Filters.EndDate" class="cf-field-label"></label>
+                    <input asp-for="Filters.EndDate" />
+                </div>
+                <div>
+                    <label asp-for="Filters.Responsible" class="cf-field-label"></label>
+                    <input asp-for="Filters.Responsible" />
+                </div>
+            </div>
+            <div class="cf-management-actions">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a asp-action="Checklists" class="btn btn-outline-secondary">Limpar</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="cf-surface cf-table-section">
+        <div class="cf-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Template</th>
+                        <th>Area</th>
+                        <th>Inspetor</th>
+                        <th>Responsavel</th>
+                        <th>Data</th>
+                        <th>Check</th>
+                        <th>X</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="cf-data-row">
+                            <td><strong>@item.TemplateCode</strong><br /><span class="text-secondary">@item.TemplateName</span></td>
+                            <td>@item.InspectionAreaName</td>
+                            <td>@item.InspectorName</td>
+                            <td>@item.ResponsibleName</td>
+                            <td>@item.CompletedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.TotalCheck</td>
+                            <td>@item.TotalX</td>
+                            <td class="text-end"><a asp-action="Details" asp-route-id="@item.Id" class="cf-link">Detalhes</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

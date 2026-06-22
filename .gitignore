@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-frontend/checklist-web/node_modules/
 
 # Build outputs
 **/bin/
@@ -9,7 +8,6 @@ frontend/checklist-web/node_modules/
 **/dist-ssr/
 **/TestResults/
 artifacts/
-backend/Checklist.Api/temp-build-*/
 
 # Environment files
 .env
@@ -19,6 +17,7 @@ backend/Checklist.Api/temp-build-*/
 
 # IDE
 .vscode/
+.vs/
 .idea/
 *.suo
 *.user

@@ -1,0 +1,249 @@
+@model Checklist.Mvc.ViewModels.NonOkDetailsViewModel
+@{
+    ViewData["Title"] = "Non-compliant item details";
+    var errorMessage = TempData["NonOkErrorMessage"] as string;
+    var successMessage = TempData["NonOkSuccessMessage"] as string;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <div class="cf-document-kicker">Itens Não-OK</div>
+            <h1 class="cf-page-title">Detalhe do item</h1>
+            <p class="cf-page-subtitle">Análise completa do registro e histórico da tratativa.</p>
+        </div>
+        <div class="cf-filter-actions">
+            <a class="cf-button cf-button-secondary" asp-controller="NonOk" asp-action="Lista" asp-route-status="@Model.BackStatus">Voltar</a>
+            <a class="cf-button cf-button-primary" asp-controller="Checklist" asp-action="Details" asp-route-id="@Model.ChecklistId">Abrir checklist</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="cf-form-error">@errorMessage</div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="cf-success-banner">@successMessage</div>
+    }
+
+    <section class="cf-document-shell">
+        <div class="cf-document-hero">
+            <div class="cf-document-kicker">Item @Model.Order · @Model.EquipmentCode</div>
+            <h2 class="cf-document-title">@Model.Description</h2>
+            <p class="cf-document-subtitle">@Model.EquipmentDescription</p>
+        </div>
+
+        <div class="cf-detail-grid">
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Status</span>
+                <span><span class="cf-badge @Model.WorkflowCssClass">@Model.WorkflowLabel</span></span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Data do checklist</span>
+                <span class="cf-detail-value">@Model.ChecklistDateDisplay</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Setor de origem</span>
+                <span class="cf-detail-value">@Model.SectorName</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Operador</span>
+                <span class="cf-detail-value">@Model.OperatorName - @Model.OperatorRegistration</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Responsável atual</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ResponsibleName) ? "Nao atribuido" : Model.ResponsibleName)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Responsável do setor</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ResponsibleSectorName) ? "-" : Model.ResponsibleSectorName)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Aprovado por</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ApprovedByName) ? "-" : Model.ApprovedByName)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Aprovado em</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ApprovedAtDisplay) ? "-" : Model.ApprovedAtDisplay)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Completo por</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ConcludedByName) ? "-" : Model.ConcludedByName)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Completo em</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.ConcludedAtDisplay) ? "-" : Model.ConcludedAtDisplay)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Previsto para</span>
+                <span class="cf-detail-value">@(string.IsNullOrWhiteSpace(Model.PlannedCompletionDateDisplay) ? "-" : Model.PlannedCompletionDateDisplay)</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Conclusão</span>
+                <span class="cf-detail-value">@Model.CompletionPercent%</span>
+            </div>
+        </div>
+
+        <div class="cf-document-section">
+            <div class="cf-naook-detail-grid">
+                <div class="cf-surface cf-surface-padded">
+                    <h3 class="cf-section-title">Observações</h3>
+                    <p class="cf-naook-detail-copy">@(string.IsNullOrWhiteSpace(Model.Observation) ? "-" : Model.Observation)</p>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Instruction))
+                {
+                    <div class="cf-surface cf-surface-padded">
+                        <h3 class="cf-section-title">Instrução</h3>
+                        <p class="cf-naook-detail-copy">@Model.Instruction</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.AssignmentObservation))
+                {
+                    <div class="cf-surface cf-surface-padded">
+                        <h3 class="cf-section-title">Detalhes de Atribbuição</h3>
+                        <p class="cf-naook-detail-copy">@Model.AssignmentObservation</p>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.ResponsibleObservation))
+                {
+                    <div class="cf-surface cf-surface-padded">
+                        <h3 class="cf-section-title">Observações do Responsável</h3>
+                        <p class="cf-naook-detail-copy">@Model.ResponsibleObservation</p>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.ImageBase64))
+            {
+                <div class="cf-surface cf-surface-padded cf-naook-image-panel">
+                    <h3 class="cf-section-title">Imagem anexada</h3>
+                    <img class="cf-naook-detail-image" src="@Model.ImageBase64" alt="@(Model.ImageFileName ?? $"Imagem do item {Model.Order}")" />
+                </div>
+            }
+        </div>
+
+        <div class="cf-document-section">
+            <div class="cf-naook-workflow-shell">
+                <div class="cf-naook-workflow-header">
+                    <h3 class="cf-section-title">Tratativa</h3>
+                    <span class="cf-badge @Model.WorkflowCssClass">@Model.WorkflowLabel</span>
+                </div>
+
+                @if (Model.CanAssign || Model.CanUpdate)
+                {
+                    <form method="post" asp-action="@(Model.CanAssign ? "Assign" : "Update")" asp-route-id="@Model.ChecklistItemId" class="cf-naook-workflow-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="BackStatus" value="@Model.Form.BackStatus" />
+
+                        <div class="cf-naook-form-grid">
+                            <div>
+                                <label class="form-label fw-semibold" for="ResponsibleSupervisorId">Responsavel</label>
+                                <select class="form-select" id="ResponsibleSupervisorId" name="ResponsibleSupervisorId">
+                                    <option value="">Selecione um responsável</option>
+                                    @foreach (var option in Model.ResponsibleOptions)
+                                    {
+                                        if (Model.Form.ResponsibleSupervisorId == option.Id)
+                                        {
+                                            <option value="@option.Id" selected>@option.DisplayName</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@option.Id">@option.DisplayName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="form-label fw-semibold" for="PlannedCompletionDate">Data prevista</label>
+                                <input class="form-control" type="date" id="PlannedCompletionDate" name="PlannedCompletionDate" value="@Model.Form.PlannedCompletionDate" />
+                            </div>
+
+                            <div>
+                                <label class="form-label fw-semibold" for="CompletionPercent">Percentual</label>
+                                <select class="form-select" id="CompletionPercent" name="CompletionPercent">
+                                    @for (var percent = 0; percent <= 100; percent += 10)
+                                    {
+                                        if (Model.Form.CompletionPercent == percent)
+                                        {
+                                            <option value="@percent" selected>@percent%</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@percent">@percent%</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        @if (Model.CanAssign)
+                        {
+                            <div>
+                                <label class="form-label fw-semibold" for="AssignmentObservation">Observações da Atribuição</label>
+                                <textarea class="form-control cf-naook-textarea" id="AssignmentObservation" name="AssignmentObservation">@Model.Form.AssignmentObservation</textarea>
+                            </div>
+                        }
+
+                        <div>
+                            <label class="form-label fw-semibold" for="ResponsibleObservation">Observações do Responsável</label>
+                            <textarea class="form-control cf-naook-textarea" id="ResponsibleObservation" name="ResponsibleObservation">@Model.Form.ResponsibleObservation</textarea>
+                        </div>
+
+                        <div class="cf-filter-actions">
+                            <button type="submit" class="cf-button cf-button-primary">@(Model.CanAssign ? "Aprovar e atribuir" : "Salvar tratativa")</button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <div class="cf-surface cf-surface-padded">
+                        <p class="cf-naook-detail-copy">Tratativa encerrada.</p>
+                    </div>
+                }
+
+                @if (Model.CanComplete)
+                {
+                    <form method="post" asp-action="Complete" asp-route-id="@Model.ChecklistItemId" class="cf-filter-actions">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="backStatus" value="@Model.BackStatus" />
+                        <button type="submit" class="cf-button cf-button-secondary">Marcar como concluída</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="cf-document-section">
+            <h3 class="cf-section-title">Histórico de Movimentações</h3>
+
+            @if (Model.History.Count == 0)
+            {
+                <div class="cf-empty">Nenhuma movimentação registrada para este item.</div>
+            }
+            else
+            {
+                <div class="cf-naook-timeline">
+                    @foreach (var entry in Model.History)
+                    {
+                        <div class="cf-naook-timeline-row">
+                            <div class="cf-naook-timeline-dot"></div>
+                            <div class="cf-naook-timeline-card">
+                                <div class="cf-naook-timeline-top">
+                                    <strong class="cf-card-title">@entry.Title</strong>
+                                    <span class="cf-card-subtitle">@entry.CreatedAtDisplay</span>
+                                </div>
+                                <div class="cf-detail-label">@entry.CreatedByDisplayName</div>
+                                <p class="cf-naook-detail-copy">@entry.Description</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+</div>

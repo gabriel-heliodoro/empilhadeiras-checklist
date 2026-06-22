@@ -1,0 +1,138 @@
+@model Checklist.Mvc.ViewModels.NonOkListViewModel
+@{
+    ViewData["Title"] = "Items non-compliant";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">@Model.Title</h1>
+            <p class="cf-page-subtitle">@Model.Description</p>
+        </div>
+        <a class="cf-button cf-button-secondary" asp-controller="NonOk" asp-action="Index">Back</a>
+    </div>
+
+    <section class="cf-surface cf-surface-padded cf-filter-shell">
+        <div class="cf-filter-header">
+            <div>
+                <h2 class="cf-dashboard-group-title">Filtros do painel</h2>
+                <p class="cf-page-subtitle mb-0">Refine a fila de tratativas antes de abrir um checklist ou distribuir uma acao.</p>
+            </div>
+            <div class="cf-toolbar-summary">
+                <span class="cf-summary-chip">@Model.TotalPanelCount registro(s) no painel</span>
+                <span class="cf-summary-chip">@Model.ActiveCount na fila atual</span>
+            </div>
+        </div>
+
+        <form method="get" asp-action="Lista" class="cf-list-grid">
+            <input type="hidden" name="status" value="@Model.ActiveStatus" />
+            <div class="cf-filter-grid">
+                <div>
+                    <label class="form-label fw-semibold" for="DataInicio">Data inicial</label>
+                    <input class="form-control" type="date" id="DataInicio" name="DataInicio" value="@Model.Filters.DataInicio" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="DataFim">Data final</label>
+                    <input class="form-control" type="date" id="DataFim" name="DataFim" value="@Model.Filters.DataFim" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="Equipment">Equipment</label>
+                    <input class="form-control" type="text" id="Equipment" name="Equipment" value="@Model.Filters.Equipment" />
+                </div>
+                <div>
+                    <label class="form-label fw-semibold" for="Operator">Operator</label>
+                    <input class="form-control" type="text" id="Operator" name="Operator" value="@Model.Filters.Operator" />
+                </div>
+            </div>
+
+            <div class="cf-filter-actions">
+                <button type="submit" class="cf-button cf-button-primary">Buscar</button>
+                <a asp-action="Lista" asp-route-status="@Model.ActiveStatus" class="cf-button cf-button-secondary">Limpar</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="cf-surface cf-naook-list-shell">
+        <div class="cf-naook-list-header">
+            <div class="cf-table-titleblock">
+                <h2 class="cf-dashboard-group-title">@Model.Title</h2>
+                <p class="cf-page-subtitle mb-0">@Model.ActiveCount item(ns) na fila atual.</p>
+            </div>
+
+            <div class="cf-toolbar-summary">
+                <a class="cf-summary-chip" asp-action="Lista" asp-route-status="pending">Pending @Model.PendingCount</a>
+                <a class="cf-summary-chip" asp-action="Lista" asp-route-status="in-progress">Andamento @Model.InProgressCount</a>
+                <a class="cf-summary-chip" asp-action="Lista" asp-route-status="completed">Completed @Model.CompletedCount</a>
+            </div>
+        </div>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="cf-empty">Nenhum item Não-OK foi encontrado para os filtros atuais.</div>
+        }
+        else
+        {
+            <div class="cf-naook-items">
+                @foreach (var item in Model.Items)
+                {
+                    <article class="cf-naook-item-card">
+                        <div class="cf-naook-item-header">
+                            <div class="cf-naook-item-copy">
+                                <span class="cf-badge cf-badge-blue">@item.EquipmentCode</span>
+                                <h3 class="cf-naook-item-title">Item @item.Order - @item.Description</h3>
+                                <p class="cf-card-subtitle">@item.EquipmentDescription</p>
+                            </div>
+                            <span class="cf-badge @item.WorkflowCssClass">@item.WorkflowLabel</span>
+                        </div>
+
+                        <div class="cf-naook-info-grid">
+                            <div class="cf-naook-info-block">
+                                <span class="cf-detail-label">Setor</span>
+                                <span class="cf-detail-value">@item.SectorName</span>
+                            </div>
+                            <div class="cf-naook-info-block">
+                                <span class="cf-detail-label">Operador</span>
+                                <span class="cf-detail-value">@item.OperatorName - @item.OperatorRegistration</span>
+                            </div>
+                            <div class="cf-naook-info-block">
+                                <span class="cf-detail-label">Data do checklist</span>
+                                <span class="cf-detail-value">@item.ChecklistDateDisplay</span>
+                            </div>
+                            <div class="cf-naook-info-block">
+                                <span class="cf-detail-label">Conclusãoo</span>
+                                <span class="cf-detail-value">@item.CompletionPercent%</span>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(item.Instruction))
+                        {
+                            <div class="cf-naook-copy-block">
+                                <span class="cf-detail-label">Instrução</span>
+                                <p class="cf-naook-copy-text">@item.Instruction</p>
+                            </div>
+                        }
+
+                        <div class="cf-naook-copy-block">
+                            <span class="cf-detail-label">Observações do operador</span>
+                            <p class="cf-naook-copy-text">@(string.IsNullOrWhiteSpace(item.Observation) ? "-" : item.Observation)</p>
+                        </div>
+
+                        <div class="cf-card-footer">
+                            <span class="text-secondary small">
+                                Responsavel: @(item.ResponsibleName ?? "Nao atribuido")
+                                @if (!string.IsNullOrWhiteSpace(item.PlannedCompletionDateDisplay))
+                                {
+                                    <text> · Previsto: @item.PlannedCompletionDateDisplay</text>
+                                }
+                            </span>
+                            <div class="cf-filter-actions">
+                                <a class="cf-link" asp-controller="NonOk" asp-action="Details" asp-route-id="@item.ChecklistItemId" asp-route-status="@Model.ActiveStatus">View workflow</a>
+                                <a class="cf-link" asp-controller="Checklist" asp-action="Details" asp-route-id="@item.ChecklistId">Abrir checklist</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+</div>

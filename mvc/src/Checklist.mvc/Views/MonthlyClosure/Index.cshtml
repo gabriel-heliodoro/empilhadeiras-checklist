@@ -1,0 +1,205 @@
+@model Checklist.Mvc.ViewModels.MonthlyClosurePageViewModel
+@{
+    ViewData["Title"] = "Fechamentos mensais";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Fechamentos mensais</h1>
+        </div>
+        <div class="cf-toolbar-summary">
+            <span class="cf-summary-chip">@Model.Closures.Count fechamentos</span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <section class="cf-surface cf-surface-padded">
+        <form asp-action="Index" method="get" class="cf-filter-shell">
+            <div class="cf-filter-grid">
+                <div>
+                    <label asp-for="Filters.EquipmentId" class="cf-field-label"></label>
+                    <select asp-for="Filters.EquipmentId" class="form-select">
+                        @foreach (var option in Model.EquipmentOptions)
+                        {
+                            <option value="@option.Id">@option.Label</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label asp-for="Filters.Year" class="cf-field-label"></label>
+                    <input asp-for="Filters.Year" />
+                </div>
+                <div>
+                    <label asp-for="Filters.Month" class="cf-field-label"></label>
+                    <input asp-for="Filters.Month" />
+                </div>
+            </div>
+            <div class="cf-management-actions">
+                <button type="submit" class="btn btn-primary">Atualizar prévia</button>
+            </div>
+        </form>
+        @if (Model.Preview is not null)
+        {
+            <form asp-action="Close" method="post" class="mt-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Filters.EquipmentId" />
+                <input type="hidden" asp-for="Filters.Year" />
+                <input type="hidden" asp-for="Filters.Month" />
+                <button type="submit" class="btn btn-outline-primary" @(Model.Preview.IsAlreadyClosed ? "disabled" : null)>@(Model.Preview.IsAlreadyClosed ? "Já fechado" : "Fechar mes")</button>
+            </form>
+        }
+    </section>
+
+    @if (!string.IsNullOrWhiteSpace(Model.PreviewError))
+    {
+        <div class="cf-alert cf-alert-error">@Model.PreviewError</div>
+    }
+
+    @if (Model.Preview is not null)
+    {
+        <section class="cf-document-shell">
+            <div class="cf-document-hero">
+                <div class="cf-document-kicker">Prévia mensal</div>
+                <h2 class="cf-document-title">@Model.Preview.EquipmentCode</h2>
+                <p class="cf-document-subtitle">@Model.Preview.EquipmentDescription</p>
+            </div>
+            <div class="cf-detail-grid">
+                <div class="cf-detail-meta">
+                    <span class="cf-detail-label">Setor</span>
+                    <span class="cf-detail-value">@Model.Preview.SectorName</span>
+                </div>
+                <div class="cf-detail-meta">
+                    <span class="cf-detail-label">Competência</span>
+                    <span class="cf-detail-value">@Model.Preview.Month.ToString("00")/@Model.Preview.Year</span>
+                </div>
+                <div class="cf-detail-meta">
+                    <span class="cf-detail-label">Dias com checklist</span>
+                    <span class="cf-detail-value">@Model.Preview.TotalDaysWithChecklist</span>
+                </div>
+                <div class="cf-detail-meta">
+                    <span class="cf-detail-label">Checklists considerados</span>
+                    <span class="cf-detail-value">@Model.Preview.TotalChecklistsConsidered</span>
+                </div>
+            </div>
+
+            <div class="cf-document-section">
+                <h3 class="cf-section-title">Dias consolidados</h3>
+                <div class="cf-management-table-actions">
+                    @foreach (var day in Model.Preview.Days)
+                    {
+                        <span class="cf-management-pill">Dia @day.Day.ToString("00") - @day.OperatorRegistration</span>
+                    }
+                </div>
+            </div>
+
+            @if (Model.Preview.Warnings.Count > 0)
+            {
+                <div class="cf-document-section pt-0">
+                    <h3 class="cf-section-title">Avisos</h3>
+                    <div class="cf-list-grid">
+                        @foreach (var warning in Model.Preview.Warnings)
+                        {
+                            <div class="cf-alert cf-alert-error">@warning</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="cf-document-section pt-0">
+                <h3 class="cf-section-title">Matriz consolidada</h3>
+                <div class="cf-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                @for (var day = 1; day <= 31; day++)
+                                {
+                                    <th>@day.ToString("00")</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.Preview.Rows)
+                            {
+                                <tr class="cf-data-row">
+                                    <td>
+                                        <strong>@row.Order</strong><br />
+                                        <span class="text-secondary">@row.Description</span>
+                                    </td>
+                                    @foreach (var value in row.ValuesByDay)
+                                    {
+                                        <td>@value</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.Preview.Comments.Count > 0)
+            {
+                <div class="cf-document-section pt-0">
+                    <h3 class="cf-section-title">Comentários e desvios</h3>
+                    <div class="cf-list-grid">
+                        @foreach (var comment in Model.Preview.Comments)
+                        {
+                            <div class="cf-surface cf-surface-padded">@comment</div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+
+    <section class="cf-surface cf-table-section">
+        <div class="cf-table-toolbar">
+            <div class="cf-table-titleblock">
+                <h2 class="cf-section-title mb-0">Histórico de fechamentos</h2>
+                <span class="cf-page-subtitle">Arquivos jáa gerados para o setor atual.</span>
+            </div>
+        </div>
+        <div class="cf-table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Equipamento</th>
+                        <th>Competencia</th>
+                        <th>Checklists</th>
+                        <th>Versao</th>
+                        <th>Fechado em</th>
+                        <th>Por</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Closures)
+                    {
+                        <tr class="cf-data-row">
+                            <td>
+                                <strong>@item.EquipmentCode</strong><br />
+                                <span class="text-secondary">@item.EquipmentDescription</span>
+                            </td>
+                            <td>@item.Month.ToString("00")/@item.Year</td>
+                            <td>@item.ChecklistCount</td>
+                            <td>@item.TemplateVersion</td>
+                            <td>@item.ClosedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.ClosedByName</td>
+                            <td class="text-end">
+                                <div class="cf-management-table-actions justify-content-end">
+                                    <a asp-action="Index" asp-route-equipmentId="@item.EquipmentId" asp-route-year="@item.Year" asp-route-month="@item.Month" class="cf-link">Ver previa</a>
+                                    <a asp-action="Download" asp-route-id="@item.Id" class="cf-link">Baixar</a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

@@ -2,32 +2,33 @@
 
 ## Objetivo
 
-Este repositório segue um padrão de manutenção orientado para:
+Este repositorio segue um padrao de manutencao orientado para:
 
-- código limpo
-- mudanças pequenas e revisáveis
+- codigo limpo
+- mudancas pequenas e revisaveis
 - segredos fora do Git
-- build reproduzível
+- build reproduzivel
+- documentacao alinhada com a arquitetura MVC atual
 
-## Regras básicas
+## Regras basicas
 
-1. Não commitar artefatos gerados:
+1. Nao commitar artefatos gerados:
    - `bin/`
    - `obj/`
    - `dist/`
    - `artifacts/`
    - `temp-build-*`
-2. Não commitar segredos reais:
-   - chaves JWT
-   - connection strings reais
-   - senhas
-3. Prefira mudanças pequenas por PR.
-4. Toda migration deve acompanhar a mudança de modelo correspondente.
-5. Documentação operacional deve ser atualizada quando a mudança afetar deploy, banco ou fluxo crítico.
+2. Nao commitar segredos reais:
+   - senhas de banco
+   - credenciais de AD
+   - cookies exportados
+3. Prefira mudancas pequenas por PR.
+4. Mudancas de modelo devem atualizar `Checklist.Infrastructure` e a documentacao correspondente.
+5. Mudancas operacionais devem atualizar `README.md`, `DEPLOY.md`, `infra/README.md` e os arquivos em `docs/` quando aplicavel.
 
 ## Branches
 
-Sugestão de convenção:
+Sugestao:
 
 - `feature/<nome-curto>`
 - `fix/<nome-curto>`
@@ -36,58 +37,69 @@ Sugestão de convenção:
 
 ## Commits
 
-Sugestão de padrão:
+Sugestao:
 
-- `feat(stp): add document control flow`
-- `fix(auth): bind checklist to authenticated operator`
-- `refactor(supervisor): split controller by feature`
-- `docs(deploy): update corporate deployment guide`
+- `feat(mvc): add operator checklist flow`
+- `fix(auth): correct supervisor cookie redirect`
+- `refactor(catalog): split equipment form mapping`
+- `docs(deploy): update mvc deployment guide`
 
 ## Checklist antes de abrir PR
 
-1. Rodar build do backend:
+1. Rodar build do MVC:
 
 ```powershell
-dotnet build backend/Checklist.Api/Checklist.Api.csproj
+dotnet build mvc/src/Checklist.Mvc/Checklist.Mvc.csproj
 ```
 
-2. Rodar testes do backend, quando aplicável:
+2. Se a mudanca tocar persistencia real, validar o fluxo com MySQL configurado.
+
+3. Se a mudanca tocar autenticacao administrativa, validar os dois cenarios:
+   - `DevelopmentStub`
+   - `ActiveDirectory` em Windows, quando aplicavel
+
+4. Confirmar que nao ha artefatos gerados no `git status`.
+
+5. Confirmar que `appsettings`, `.env` e scripts locais nao contem credenciais reais.
+
+## Banco e schema
+
+Estado atual da linha MVC:
+
+- o projeto usa `AppDbContext` em `mvc/src/Checklist.Infrastructure`
+- o bootstrap local usa `EnsureCreatedAsync`
+- ainda nao existe pacote de migrations versionadas equivalente ao legado
+
+Se migrations passarem a ser adotadas nesta linha, elas devem ficar em `mvc/src/Checklist.Infrastructure` e usar `mvc/src/Checklist.Mvc` como startup project.
+
+## Comandos uteis
+
+Rodar a aplicacao MVC:
 
 ```powershell
-dotnet test backend/Checklist.Api.Tests/Checklist.Api.Tests.csproj
+dotnet run --project mvc/src/Checklist.Mvc/Checklist.Mvc.csproj --urls http://localhost:5204
 ```
 
-3. Rodar build do frontend:
+Rodar compose local:
 
 ```powershell
-cd frontend/checklist-web
-npm ci
-npm run build
+cd infra
+docker compose up -d
 ```
 
-4. Confirmar que não há arquivos gerados no `git status`.
-5. Confirmar que `appsettings` e `.env` não contêm credenciais reais.
+## Testes
 
-## Migrations
+No estado atual, nao existe projeto de testes dedicado em `mvc/tests`.
 
-Criar migration:
+Se voce criar cobertura automatizada, mantenha os testes alinhados com a arquitetura atual e nao com a API legada.
 
-```powershell
-dotnet ef migrations add NomeDaMigration --project backend/Checklist.Api/Checklist.Api.csproj --startup-project backend/Checklist.Api/Checklist.Api.csproj
-```
+## Documentacao
 
-Aplicar migration:
-
-```powershell
-dotnet ef database update --project backend/Checklist.Api/Checklist.Api.csproj --startup-project backend/Checklist.Api/Checklist.Api.csproj
-```
-
-## Documentação
-
-Atualize estes arquivos quando aplicável:
+Atualize estes arquivos quando aplicavel:
 
 - `README.md`
 - `DEPLOY.md`
-- `docs/mysql-corporate-migration-guide.md`
+- `infra/README.md`
 - `docs/architecture.md`
 - `docs/api-overview.md`
+- `docs/mysql-corporate-migration-guide.md`

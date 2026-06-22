@@ -1,113 +1,136 @@
 # Architecture
 
-Visão estrutural do CheckFlow.
+Visao estrutural do CheckFlow na arquitetura atual.
 
-## Visão geral
+## Visao geral
 
-A solução está organizada em três blocos principais:
+A solucao esta organizada em quatro camadas dentro da linha MVC:
 
-1. backend ASP.NET Core
-2. frontend React
-3. banco MySQL
+1. `Checklist.Mvc`
+2. `Checklist.Application`
+3. `Checklist.Domain`
+4. `Checklist.Infrastructure`
 
-## Backend
+Persistencia principal:
 
-### Stack
+5. SQL Server
 
-- .NET 10
-- ASP.NET Core Web API
-- Entity Framework Core
-- JWT Bearer Authentication
+## Camadas
 
-### Organização
+### 1. Presentation - `Checklist.Mvc`
 
-- `Controllers/`: entrada HTTP
-- `Dtos/`: contratos de entrada e saída
-- `Models/`: entidades do domínio
-- `Data/`: `AppDbContext` e configurações do EF Core
-- `Security/`: autenticação, claims e emissão de token
-- `Support/`: componentes auxiliares
-- `Options/`: binding de configuração
+Responsabilidades:
 
-### Contextos funcionais
+- controllers HTTP
+- views Razor
+- fluxo de navegacao
+- formularios
+- cookies de autenticacao
 
-- checklist operacional
-- supervisão operacional
-- STP
-- administração
-- autenticação de operador
+Exemplos de modulos:
 
-## Frontend
+- `AccountController`
+- `OperatorAccountController`
+- `OperationController`
+- `OperatorController`
+- `CatalogController`
+- `HomeController`
+- `NonOkController`
+- `StpController`
 
-### Stack
+### 2. Application - `Checklist.Application`
 
-- React 19
-- Vite
-- React Router
-- TypeScript
+Responsabilidades:
 
-### Estrutura
+- DTOs
+- contratos de leitura e escrita
+- abstracoes de autenticacao
+- servicos orientados a caso de uso
 
-- `src/pages/`: páginas e fluxos
-- `src/api.ts`: cliente HTTP principal
-- `src/operator-api.ts`: cliente do fluxo operacional
-- `src/types.ts`: tipos compartilhados
+Essa camada nao conhece Razor nem detalhes de infraestrutura concreta.
 
-### Responsabilidades
+### 3. Domain - `Checklist.Domain`
 
-- autenticação administrativa
-- autenticação operacional
-- administração de catálogos
-- checklist operacional mobile-first
-- operação STP
+Responsabilidades:
 
-## Banco de dados
+- conceitos centrais do negocio
+- tipos compartilhados
+- invariantes do dominio que nao dependem de UI nem de persistencia
 
-### Entidades centrais
+### 4. Infrastructure - `Checklist.Infrastructure`
 
-- `Checklist`
-- `ChecklistItem`
-- `ChecklistItemTemplate`
-- `ChecklistItemAcao`
-- `Operador`
-- `Equipamento`
-- `Setor`
-- `UsuarioSupervisor`
-- `StpAreaInspecao`
-- `StpAreaChecklist`
-- `StpDocumentoEmpresa`
-- `StpDocumentoFuncionario`
+Responsabilidades:
 
-### Padrão de persistência
+- `AppDbContext`
+- modelos persistidos
+- consultas e comandos em EF Core
+- integracao com SQL Server
+- autenticacao administrativa e operacional
+- integracao com Active Directory
 
-- modelo relacional em MySQL
-- mapeamento via Entity Framework Core
-- migrations versionadas no repositório
+## Autenticacao
 
-## Fluxos arquiteturais
+### Supervisor
 
-### Checklist operacional
+- cookie de autenticacao
+- login em `/account/login`
+- modo `ActiveDirectory` para AD real
+- modo `DevelopmentStub` para ambiente de desenvolvimento
 
-1. operador autentica
-2. frontend consulta equipamento e template
-3. checklist é enviado ao backend
-4. backend persiste checklist e itens
+Importante:
 
-### Supervisão operacional
+- a validacao AD real so e registrada em Windows
+- em Linux, a validacao AD real continua indisponivel
 
-1. supervisor acessa dashboard setorial
-2. backend agrega histórico e status operacionais
-3. tratativas de não conformidade são registradas e auditadas
+### Operador
+
+- cookie de autenticacao proprio
+- login em `/operador/login`
+- senha hash persistida no banco
+- fluxo de primeiro acesso suportado
+
+## Persistencia
+
+### Banco principal
+
+- SQL Server
+- EF Core
+- `AppDbContext` em `mvc/src/Checklist.Infrastructure/Data/AppDbContext.cs`
+
+### Fallback local
+
+Quando nenhuma conexao e configurada:
+
+- o sistema usa banco em memoria
+- o bootstrap local cria dados minimos para navegacao
+
+Esse modo nao substitui validacao real com SQL Server.
+
+## Fluxos principais
+
+### Operacao
+
+1. operador acessa `/operacao`
+2. se necessario, faz login em `/operador/login`
+3. informa QR ID ou busca equipamento
+4. preenche checklist
+5. assina e envia
+
+### Supervisao
+
+1. supervisor acessa `/account/login`
+2. navega para dashboard
+3. consulta historico e detalhe de checklists
+4. trata itens non-compliant
+5. administra catalogos e fechamentos
 
 ### STP
 
-1. inspetor opera catálogo de áreas
-2. inspeções são executadas em tela operacional dedicada
-3. histórico e documentos permanecem vinculados ao domínio STP
+1. inspetor autenticado acessa dashboard STP
+2. opera areas, checklists e documentos
+3. mantem historico e rastreabilidade
 
-## Diretrizes
+## Estado da migracao
 
-- separação entre catálogo e evento operacional
-- autenticação distinta para contexto administrativo e contexto operacional
-- dependência explícita de configuração externa para segredos e conexão
-- evolução de esquema controlada por migrations
+- `mvc/` e a linha ativa
+- a documentacao operacional deve apontar para `mvc/src/Checklist.Mvc`

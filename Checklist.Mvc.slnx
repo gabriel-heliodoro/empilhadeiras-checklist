@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="mvc/src/Checklist.Application/Checklist.Application.csproj" />
+    <Project Path="mvc/src/Checklist.Domain/Checklist.Domain.csproj" />
+    <Project Path="mvc/src/Checklist.Infrastructure/Checklist.Infrastructure.csproj" />
+    <Project Path="mvc/src/Checklist.Mvc/Checklist.Mvc.csproj" />
+  </Folder>
+</Solution>

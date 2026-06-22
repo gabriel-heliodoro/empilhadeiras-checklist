@@ -1,0 +1,94 @@
+@model Checklist.Mvc.ViewModels.ChecklistDetailsViewModel
+@{
+    ViewData["Title"] = "Checklist";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Checklist @Model.Code</h1>
+            <p class="cf-page-subtitle">Relatório operacional do equipamento inspecionado.</p>
+        </div>
+        <a asp-controller="Checklist" asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <article class="cf-document-shell">
+        <section class="cf-document-hero">
+            <div class="cf-document-kicker">CheckFlow</div>
+            <h2 class="cf-document-title">@Model.EquipmentCode</h2>
+            <p class="cf-document-subtitle">@Model.EquipmentDescription</p>
+        </section>
+
+        <section class="cf-detail-grid">
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Operator</span>
+                <span class="cf-detail-value">@Model.OperatorName</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Sector</span>
+                <span class="cf-detail-value">@Model.SectorName</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Criado em UTC</span>
+                <span class="cf-detail-value">@Model.CreatedAtUtc.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Status</span>
+                <span class="cf-detail-value">
+                    @if (Model.Status.Contains("Nao", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="cf-badge text-bg-danger">@Model.Status</span>
+                    }
+                    else if (Model.Status.Contains("Conforme", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <span class="cf-badge text-bg-success">@Model.Status</span>
+                    }
+                    else
+                    {
+                        <span class="cf-badge text-bg-warning">@Model.Status</span>
+                    }
+                </span>
+            </div>
+        </section>
+
+        <section class="cf-document-section">
+            <h2 class="cf-section-title">Itens do checklist</h2>
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="cf-data-row">
+                            <td>
+                                <div class="cf-card-title">@item.Label</div>
+                            </td>
+                            <td>
+                                @if (string.Equals(item.Status, "Nok", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Status, "NOK", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="cf-badge text-bg-danger">@item.Status</span>
+                                }
+                                else if (string.Equals(item.Status, "Ok", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Status, "OK", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    <span class="cf-badge text-bg-success">@item.Status</span>
+                                }
+                                else
+                                {
+                                    <span class="cf-badge text-bg-secondary">@item.Status</span>
+                                }
+                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </article>
+</div>

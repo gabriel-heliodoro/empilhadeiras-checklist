@@ -1,0 +1,161 @@
+@model Checklist.Mvc.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+
+    string GetStatusTone(string key)
+    {
+        return key switch
+        {
+            "ok" => "aprovado",
+            "nok" => "nao-ok",
+            "in-progress" => "em-andamento",
+            "inactive" => "inativo",
+            _ => "aguardando"
+        };
+    }
+
+    string GetStatusLabel(string key)
+    {
+        return key switch
+        {
+            "ok" => "Aprovado",
+            "nok" => "Nao OK",
+            "in-progress" => "Em andamento",
+            "inactive" => "Inativo",
+            _ => "Aguardando"
+        };
+    }
+
+    string GetStatusIcon(string key)
+    {
+        return key switch
+        {
+            "ok" => "OK",
+            "nok" => "NOK",
+            "in-progress" => "EM",
+            "inactive" => "IN",
+            _ => "AG"
+        };
+    }
+}
+
+<div class="cf-page cf-dashboard-page">
+    <div class="cf-page-header cf-dashboard-header">
+        <div>
+            <h1 class="cf-page-title">Dashboard</h1>
+            <p class="cf-page-subtitle">
+                Usuario atual: <strong>@Model.UserDisplayName</strong> · Referencia UTC: <strong>@Model.CurrentUtcTimestamp</strong>
+            </p>
+        </div>
+    </div>
+
+    <div class="cf-metrics cf-dashboard-metrics">
+        <div class="cf-metric cf-dashboard-metric">
+            <div class="cf-dashboard-metric-kicker">Volume diário</div>
+            <div class="cf-metric-value">@Model.ChecklistCount</div>
+            <div class="cf-metric-label">Checklists do dia</div>
+        </div>
+        <div class="cf-metric cf-dashboard-metric">
+            <div class="cf-dashboard-metric-kicker">Base operacional</div>
+            <div class="cf-metric-value">@Model.EquipmentCount</div>
+            <div class="cf-metric-label">Equipamentos ativos</div>
+        </div>
+    </div>
+
+    <div class="cf-dashboard-groups">
+        <section class="cf-surface cf-surface-padded cf-dashboard-spotlight">
+            <div>
+                <h2 class="cf-dashboard-group-title">Ultimo checklist disponivel</h2>
+                <p class="cf-page-subtitle mb-0"></p>
+            </div>
+
+            @if (Model.SampleChecklistId.HasValue)
+            {
+                <div class="cf-dashboard-spotlight-body">
+                    <div>
+                        <span class="cf-badge cf-badge-blue">@(Model.SampleChecklistCode ?? "Checklist")</span>
+                        <p class="cf-page-subtitle mb-0 mt-3">
+                            Abra o detalhe completo para revisar itens, operador e status final.
+                        </p>
+                    </div>
+                    <a asp-controller="Checklist"
+                       asp-action="Details"
+                       asp-route-id="@Model.SampleChecklistId.Value"
+                       class="cf-button cf-button-primary">
+                        Abrir checklist
+                    </a>
+                </div>
+            }
+            else
+            {
+                <p class="mb-0 text-secondary">
+                    Nenhum checklist foi encontrado para o setor atual.
+                </p>
+            }
+        </section>
+
+        @if (Model.EquipmentGroups.Count == 0)
+        {
+            <section class="cf-dashboard-group">
+                <div class="cf-dashboard-group-header">
+                    <div>
+                        <h2 class="cf-dashboard-group-title">Equipamentos em operação</h2>
+                        <p class="cf-page-subtitle mb-0">Nenhum equipamento ativo foi encontrado para o setor atual.</p>
+                    </div>
+                </div>
+            </section>
+        }
+        else
+        {
+            @foreach (var group in Model.EquipmentGroups)
+            {
+                <section class="cf-dashboard-group">
+                    <div class="cf-dashboard-group-header">
+                        <div>
+                            <h2 class="cf-dashboard-group-title">@group.CategoryName</h2>
+                            <p class="cf-dashboard-group-meta">@group.EquipmentCount equipamento(s) nesta categoria</p>
+                        </div>
+                    </div>
+
+                    <div class="cf-dashboard-grid">
+                        @foreach (var equipment in group.Equipments)
+                        {
+                            var statusTone = GetStatusTone(equipment.StatusKey);
+
+                            <article class="cf-status-card equipment-card status-@statusTone">
+                                <div class="cf-status-bar"></div>
+                                <div class="cf-status-body">
+                                    <div class="cf-status-row">
+                                        <span class="cf-badge cf-badge-blue">@equipment.EquipmentCode</span>
+                                        <div class="cf-status-icon status-@statusTone">@GetStatusIcon(equipment.StatusKey)</div>
+                                    </div>
+
+                                    <h3 class="cf-card-title">@equipment.EquipmentDescription</h3>
+                                    <p class="cf-card-subtitle">@group.CategoryName</p>
+
+                                    <div class="cf-status-meta-row">
+                                        <span class="status-badge status-@statusTone">@GetStatusLabel(equipment.StatusKey)</span>
+                                    </div>
+
+                                    @if (equipment.ChecklistId.HasValue)
+                                    {
+                                        <div class="cf-card-footer">
+                                            <span class="text-secondary small">@equipment.ChecklistCompletedAtDisplay</span>
+                                            <a class="cf-link" asp-controller="Checklist" asp-action="Details" asp-route-id="@equipment.ChecklistId.Value">Ver relatório</a>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="cf-card-footer">
+                                            <span class="text-secondary small">Checklist pendente</span>
+                                        </div>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </section>
+            }
+        }
+    </div>
+</div>

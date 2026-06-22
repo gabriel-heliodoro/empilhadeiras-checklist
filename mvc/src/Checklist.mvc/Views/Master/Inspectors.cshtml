@@ -1,0 +1,153 @@
+@model Checklist.Mvc.ViewModels.SupervisorManagementPageViewModel
+@using Checklist.Mvc.ViewModels
+@{
+    ViewData["Title"] = "Inspetores";
+    var isEditing = Model.Form.Id.HasValue;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">@Model.Title</h1>
+            <p class="cf-page-subtitle">@Model.Subtitle</p>
+        </div>
+        <div class="cf-toolbar-summary">
+            <span class="cf-summary-chip">@Model.Items.Count usuarios</span>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <div class="cf-management-grid">
+        <section class="cf-surface cf-surface-padded">
+            <h2 class="cf-section-title">@(isEditing ? "Editar inspetor" : "Novo inspetor")</h2>
+            <form asp-action="SaveInspector" method="post" class="cf-management-form">
+                @Html.AntiForgeryToken()
+                <input asp-for="Form.Id" type="hidden" />
+                <div class="cf-filter-grid">
+                    <div>
+                        <label asp-for="Form.Name" class="cf-field-label"></label>
+                        <input asp-for="Form.Name" />
+                        <span asp-validation-for="Form.Name" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.LastName" class="cf-field-label"></label>
+                        <input asp-for="Form.LastName" />
+                        <span asp-validation-for="Form.LastName" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.SectorId" class="cf-field-label"></label>
+                        <select asp-for="Form.SectorId" class="form-select">
+                            <option value="">Selecione</option>
+                            @foreach (var option in Model.SectorOptions)
+                            {
+                                <option value="@option.Id">@option.Label</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Form.SectorId" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.Extension" class="cf-field-label"></label>
+                        <input asp-for="Form.Extension" />
+                        <span asp-validation-for="Form.Extension" class="text-danger"></span>
+                    </div>
+                </div>
+                <div>
+                    <label asp-for="Form.Email" class="cf-field-label"></label>
+                    <input asp-for="Form.Email" />
+                    <span asp-validation-for="Form.Email" class="text-danger"></span>
+                </div>
+                <div class="cf-filter-grid">
+                    <div>
+                        <label asp-for="Form.Password" class="cf-field-label"></label>
+                        <input asp-for="Form.Password" />
+                        <span asp-validation-for="Form.Password" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.ConfirmPassword" class="cf-field-label"></label>
+                        <input asp-for="Form.ConfirmPassword" />
+                        <span asp-validation-for="Form.ConfirmPassword" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="cf-management-checkboxes">
+                    <label class="cf-checkbox">
+                        <input asp-for="Form.WorkSafetyModule" type="checkbox" />
+                        <span>Modulo de seguranca do trabalho.</span>
+                    </label>
+                    <label class="cf-checkbox">
+                        <input asp-for="Form.MaterialInspectionModule" type="checkbox" />
+                        <span>Modulo de inspecao de materiais.</span>
+                    </label>
+                    <label class="cf-checkbox">
+                        <input asp-for="Form.ForceChangePassword" type="checkbox" />
+                        <span>Forcar troca de senha no proximo acesso.</span>
+                    </label>
+                    <label class="cf-checkbox">
+                        <input asp-for="Form.IsActive" type="checkbox" />
+                        <span>Usuario ativo.</span>
+                    </label>
+                </div>
+                <div class="cf-management-actions">
+                    <button type="submit" class="btn btn-primary">@(isEditing ? "Salvar alteracoes" : "Criar inspetor")</button>
+                    @if (isEditing)
+                    {
+                        <a asp-action="Inspectors" class="btn btn-outline-secondary">Limpar formulario</a>
+                    }
+                </div>
+            </form>
+        </section>
+
+        <section class="cf-surface cf-table-section">
+            <div class="cf-table-toolbar">
+                <div class="cf-table-titleblock">
+                    <h2 class="cf-section-title mb-0">Inspetores cadastrados</h2>
+                    <span class="cf-page-subtitle">Cada inspetor precisa ter pelo menos um modulo ativo.</span>
+                </div>
+            </div>
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Setor</th>
+                            <th>Modulos</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="cf-data-row">
+                                <td>
+                                    <strong>@item.FullName</strong><br />
+                                    <span class="text-secondary">@item.Login</span>
+                                </td>
+                                <td>@item.SectorName</td>
+                                <td>
+                                    <div class="cf-management-table-actions">
+                                        @foreach (var moduleCode in item.ModuleCodes)
+                                        {
+                                            <span class="cf-management-pill">@AdminManagementFormatting.GetModuleLabel(moduleCode)</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>
+                                <td class="text-end">
+                                    <a asp-action="Inspectors" asp-route-editId="@item.Id" class="cf-link">Editar</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

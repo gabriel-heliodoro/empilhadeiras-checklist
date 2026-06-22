@@ -1,0 +1,186 @@
+@using Checklist.Application.Common
+@using System.Security.Claims
+@{
+    var isAuthenticated = Context.User.Identity?.IsAuthenticated == true;
+    var currentUserName = Context.User.Identity?.Name ?? "Visitante";
+    var initialsParts = currentUserName
+        .Split(new[] { ' ', '.', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+        .Where(part => !string.IsNullOrWhiteSpace(part))
+        .Take(2)
+        .Select(part => char.ToUpperInvariant(part[0]).ToString());
+    var userInitials = string.Concat(initialsParts);
+    if (string.IsNullOrWhiteSpace(userInitials))
+    {
+        userInitials = "CF";
+    }
+
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    var isMaster = bool.TryParse(Context.User.FindFirst(CurrentUserClaimTypes.IsMaster)?.Value, out var masterValue) && masterValue;
+    var isSectorSupervisor =
+        string.Equals(Context.User.FindFirst(CurrentUserClaimTypes.UserType)?.Value, "Supervisor", StringComparison.Ordinal)
+        && Context.User.FindAll(CurrentUserClaimTypes.AccessModule).Any(claim => string.Equals(claim.Value, AccessModuleCodes.OperationalSupervision, StringComparison.OrdinalIgnoreCase));
+    var isSafetyInspector =
+        string.Equals(Context.User.FindFirst(CurrentUserClaimTypes.UserType)?.Value, "Inspector", StringComparison.Ordinal)
+        && Context.User.FindAll(CurrentUserClaimTypes.AccessModule).Any(claim => string.Equals(claim.Value, AccessModuleCodes.WorkSafety, StringComparison.OrdinalIgnoreCase));
+
+    string NavClass(string controller, string? action = null)
+    {
+        var isCurrentController = string.Equals(currentController, controller, StringComparison.OrdinalIgnoreCase);
+        var isCurrentAction = string.IsNullOrWhiteSpace(action) || string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase);
+        return isCurrentController && isCurrentAction ? "cf-nav-link is-active" : "cf-nav-link";
+    }
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CheckFlow</title>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem("checkflow-theme") || "light";
+                document.documentElement.setAttribute("data-theme", savedTheme);
+            } catch (error) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
+    <script type="importmap"></script>
+    <link rel="icon" type="image/png" href="/assets/brand/Logo-reduzida.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Checklist.Mvc.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="cf-app">
+        <header class="cf-app-header">
+            <div class="cf-topbar-shell">
+                <div class="cf-topbar">
+                    <div class="cf-topbar-brand-zone">
+                        <a class="cf-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="CheckFlow">
+                            <img src="/assets/brand/Logo-Compacta.png" alt="CheckFlow" class="logo-compacta cf-brand-logo cf-brand-logo-desktop" />
+                            <img src="/assets/brand/Logo-reduzida.png" alt="CheckFlow" class="logo-reduzida cf-brand-logo-mobile" />
+                        </a>
+                    </div>
+
+                    <button type="button"
+                            class="cf-topbar-menu-toggle"
+                            data-nav-toggle
+                            aria-label="Alternar navegação"
+                            aria-expanded="false"
+                            aria-controls="cf-topbar-nav-panel">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+
+                    <div class="cf-topbar-main" id="cf-topbar-nav-panel" data-nav-panel>
+                        <nav class="cf-nav" aria-label="Navegação principal">
+                            @if (isAuthenticated)
+                            {
+                                <a class="@NavClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index">Visão geral</a>
+                                <a class="@NavClass("Checklist")" asp-area="" asp-controller="Checklist" asp-action="Index">Checklists</a>
+                                <a class="@NavClass("NonOk")" asp-area="" asp-controller="NonOk" asp-action="Index">Itens não OK</a>
+                                @if (isSectorSupervisor)
+                                {
+                                    <a class="@NavClass("MonthlyClosure")" asp-controller="MonthlyClosure" asp-action="Index">Fechamentos</a>
+                                    <a class="@NavClass("Catalog", "Categories")" asp-controller="Catalog" asp-action="Categories">Categorias</a>
+                                    <a class="@NavClass("Catalog", "Templates")" asp-controller="Catalog" asp-action="Templates">Templates</a>
+                                    <a class="@NavClass("Catalog", "Operators")" asp-controller="Catalog" asp-action="Operators">Operadores</a>
+                                    <a class="@NavClass("Catalog", "Equipment")" asp-controller="Catalog" asp-action="Equipment">Equipamentos</a>
+                                }
+                                @if (isMaster)
+                                {
+                                    <a class="@NavClass("Master", "Sectors")" asp-controller="Master" asp-action="Sectors">Setores</a>
+                                    <a class="@NavClass("Master", "Supervisors")" asp-controller="Master" asp-action="Supervisors">Supervisores</a>
+                                    <a class="@NavClass("Master", "Inspectors")" asp-controller="Master" asp-action="Inspectors">Inspetores</a>
+                                }
+                                @if (isSafetyInspector)
+                                {
+                                    <a class="@NavClass("Stp", "Dashboard")" asp-controller="Stp" asp-action="Dashboard">STP</a>
+                                    <a class="@NavClass("Stp", "Areas")" asp-controller="Stp" asp-action="Areas">Áreas</a>
+                                    <a class="@NavClass("Stp", "NewChecklist")" asp-controller="Stp" asp-action="NewChecklist">Nova STP</a>
+                                    <a class="@NavClass("Stp", "Checklists")" asp-controller="Stp" asp-action="Checklists">Checklists STP</a>
+                                    <a class="@NavClass("StpDocuments")" asp-controller="StpDocuments" asp-action="Index">Documentos STP</a>
+                                }
+                            }
+                        </nav>
+
+                        <div class="cf-userbar">
+                            @if (Context.User.Identity?.IsAuthenticated == true)
+                            {
+                                <div class="cf-user-menu" data-user-menu>
+                                    <button type="button"
+                                            class="cf-user-menu-toggle"
+                                            data-user-menu-toggle
+                                            aria-label="Abrir menu do usuário"
+                                            aria-expanded="false"
+                                            aria-controls="cf-user-menu-panel">
+                                        <span class="cf-user-avatar" aria-hidden="true">@userInitials</span>
+                                    </button>
+
+                                    <div class="cf-user-menu-panel" id="cf-user-menu-panel" data-user-menu-panel>
+                                        <div class="cf-user-menu-head">
+                                            <div>
+                                                <div class="cf-user-menu-kicker">Sessão atual</div>
+                                                <div class="cf-user-menu-name">@currentUserName</div>
+                                            </div>
+                                            <span class="cf-user-avatar cf-user-avatar-panel" aria-hidden="true">@userInitials</span>
+                                        </div>
+
+                                        <div class="cf-user-menu-section">
+                                            <div class="cf-user-menu-label">Data</div>
+                                            <span class="cf-header-date cf-header-date-panel" data-current-date>Carregando data</span>
+                                        </div>
+
+                                        <div class="cf-user-menu-section">
+                                            <div class="cf-user-menu-label">Tema</div>
+                                            <button type="button" class="cf-theme-toggle" data-theme-toggle aria-label="Alternar tema" aria-pressed="false">
+                                                <span class="cf-theme-toggle-track" aria-hidden="true">
+                                                    <span class="cf-theme-toggle-thumb"></span>
+                                                </span>
+                                                <span class="cf-theme-toggle-text" data-theme-label>Modo escuro</span>
+                                            </button>
+                                        </div>
+
+                                        <div class="cf-user-menu-footer">
+                                            <span class="cf-user-chip">@currentUserName</span>
+                                            <form asp-controller="Account" asp-action="Logout" method="post" class="mb-0">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm">Sair</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="cf-userbar cf-userbar-public">
+                                    <a class="btn btn-outline-primary btn-sm" asp-controller="OperatorAccount" asp-action="Login">Acesso operador</a>
+                                    <a class="btn btn-primary btn-sm" asp-controller="Account" asp-action="Login">Entrar</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="cf-main">
+            @RenderBody()
+        </main>
+
+        <footer class="cf-footer">
+            &copy; 2026 - CheckFlow
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

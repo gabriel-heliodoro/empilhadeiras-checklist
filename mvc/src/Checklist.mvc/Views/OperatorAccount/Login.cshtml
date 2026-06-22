@@ -1,0 +1,60 @@
+@model Checklist.Mvc.ViewModels.OperatorLoginViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Login do operador";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CheckFlow</title>
+    <link rel="icon" type="image/png" href="/assets/brand/Logo-reduzida.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="cf-mobile-page">
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-top"></div>
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-bottom"></div>
+
+        <div class="cf-login-shell cf-operator-auth-shell cf-login-shell-compact">
+            <section class="cf-login-card cf-login-card-compact">
+                <div class="cf-login-compact-head">
+                    <img src="/assets/brand/Logo-Compacta.png" alt="CheckFlow" class="logo-compacta cf-login-compact-brand-image" />
+                </div>
+                <div class="cf-login-compact-type">Acesso operacional</div>
+
+                <form asp-action="Login" method="post" class="cf-auth-form">
+                    @Html.AntiForgeryToken()
+                    <input asp-for="ReturnUrl" type="hidden" />
+
+                    <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+
+                    <div>
+                        <label asp-for="Login" class="cf-field-label"></label>
+                        <input asp-for="Login" class="form-control" autocomplete="username" />
+                        <span asp-validation-for="Login" class="text-danger small"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="Password" class="cf-field-label"></label>
+                        <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+
+                <div class="cf-auth-footer cf-auth-footer-compact">
+                    <a class="cf-link" asp-controller="Account" asp-action="Login">Ir para acesso administrativo</a>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

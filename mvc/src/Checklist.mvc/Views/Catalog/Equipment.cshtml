@@ -1,0 +1,126 @@
+@model Checklist.Mvc.ViewModels.EquipmentManagementPageViewModel
+@{
+    ViewData["Title"] = "Equipamentos";
+    var isEditing = Model.Form.Id.HasValue;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header cf-catalog-page-header">
+        <div>
+            <h1 class="cf-page-title">Equipamentos</h1>
+        </div>
+        <div class="cf-catalog-header-actions">
+            <span class="cf-summary-chip">@Model.Items.Count equipamentos</span>
+            <a href="#equipment-form" class="btn btn-primary">@(isEditing ? "Editar equipamento" : "Novo equipamento")</a>
+        </div>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="cf-alert @(string.Equals(TempData["StatusType"] as string, "error", StringComparison.OrdinalIgnoreCase) ? "cf-alert-error" : "cf-alert-success")">@message</div>
+    }
+
+    <div class="cf-catalog-stack">
+        <section class="cf-surface cf-table-section cf-catalog-table-card">
+            <div class="cf-catalog-card-head">
+                <div class="cf-table-titleblock">
+                    <h2 class="cf-section-title mb-0">Lista</h2>
+                </div>
+            </div>
+            <div class="cf-table-wrap">
+                <table class="cf-catalog-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Descrição</th>
+                            <th>QR ID</th>
+                            <th>Categoria</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6">
+                                    <div class="cf-empty">Nenhum equipamento cadastrado para este setor.</div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr class="cf-data-row">
+                                    <td><span class="cf-catalog-code-pill">@item.Code</span></td>
+                                    <td class="cf-catalog-description-cell"><strong>@item.Description</strong></td>
+                                    <td><span class="cf-catalog-qr-pill">@item.QrId</span></td>
+                                    <td>@item.CategoryName</td>
+                                    <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>
+                                    <td class="text-end">
+                                        <div class="cf-catalog-actions">
+                                            <a asp-action="Equipment" asp-route-editId="@item.Id" asp-fragment="equipment-form" class="btn btn-outline-secondary btn-sm">Editar</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="equipment-form" class="cf-surface cf-surface-padded cf-catalog-form-card">
+            <div class="cf-catalog-card-head">
+                <div>
+                    <h2 class="cf-section-title mb-0">@(isEditing ? "Editar equipamento" : "Novo equipamento")</h2>
+                </div>
+                @if (isEditing)
+                {
+                    <a asp-action="Equipment" class="btn btn-outline-secondary">Novo equipamento</a>
+                }
+            </div>
+            <form asp-action="SaveEquipment" method="post" class="cf-management-form cf-catalog-form-grid">
+                @Html.AntiForgeryToken()
+                <input asp-for="Form.Id" type="hidden" />
+                <div>
+                    <label asp-for="Form.Code" class="cf-field-label"></label>
+                    <input asp-for="Form.Code" readonly="@isEditing" />
+                    <span asp-validation-for="Form.Code" class="text-danger"></span>
+                </div>
+                <div>
+                    <label asp-for="Form.CategoryId" class="cf-field-label"></label>
+                    <select asp-for="Form.CategoryId" class="form-select">
+                        <option value="">Selecione</option>
+                        @foreach (var option in Model.CategoryOptions)
+                        {
+                            <option value="@option.Id">@option.Label</option>
+                        }
+                    </select>
+                    <span asp-validation-for="Form.CategoryId" class="text-danger"></span>
+                </div>
+                <div class="cf-catalog-form-span">
+                    <label asp-for="Form.Description" class="cf-field-label"></label>
+                    <input asp-for="Form.Description" />
+                    <span asp-validation-for="Form.Description" class="text-danger"></span>
+                </div>
+                <label class="cf-checkbox cf-catalog-form-span">
+                    <input asp-for="Form.IsActive" type="checkbox" />
+                    <span>Equipamento ativo</span>
+                </label>
+                <div class="cf-management-actions cf-catalog-form-span">
+                    <button type="submit" class="btn btn-primary">@(isEditing ? "Salvar alteracoes" : "Criar equipamento")</button>
+                    @if (isEditing)
+                    {
+                        <a asp-action="Equipment" class="btn btn-outline-secondary">Limpar formulário</a>
+                    }
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

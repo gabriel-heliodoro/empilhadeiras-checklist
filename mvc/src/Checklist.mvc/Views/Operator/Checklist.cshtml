@@ -1,0 +1,461 @@
+@model Checklist.Mvc.ViewModels.OperatorChecklistPageViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Checklist operacional";
+    var operatorInitials = string.Concat((Model.OperatorName ?? string.Empty)
+        .Split(new[] { ' ', '.', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+        .Where(part => !string.IsNullOrWhiteSpace(part))
+        .Take(2)
+        .Select(part => char.ToUpperInvariant(part[0]).ToString()));
+    if (string.IsNullOrWhiteSpace(operatorInitials))
+    {
+        operatorInitials = "OP";
+    }
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CheckFlow</title>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem("checkflow-theme") || "light";
+                document.documentElement.setAttribute("data-theme", savedTheme);
+            } catch (error) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
+    <link rel="icon" type="image/png" href="/assets/brand/Logo-reduzida.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="cf-mobile-page">
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-top"></div>
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-bottom"></div>
+
+        <form asp-action="Checklist" asp-route-equipmentId="@Model.EquipmentId" method="post" class="cf-checklist-shell">
+            @Html.AntiForgeryToken()
+            <input asp-for="EquipmentId" type="hidden" />
+            <input asp-for="SignatureBase64" type="hidden" id="signature-value" />
+
+            <section class="cf-checklist-hero">
+                <div class="cf-checklist-hero-top">
+                    <div class="cf-checklist-brand">
+                        <img src="/assets/brand/Logo-reduzida.png" alt="CheckFlow" class="logo-reduzida" />
+
+                        <div>
+                            <div class="cf-checklist-brand-meta">Checklist operacional</div>
+                        </div>
+                    </div>
+
+                    <div class="cf-checklist-hero-actions">
+                        <a class="cf-button cf-button-secondary cf-checklist-back-button" asp-action="Index">Back</a>
+
+                        <div class="cf-user-menu cf-user-menu-mobile" data-user-menu>
+                            <button type="button"
+                                    class="cf-user-menu-toggle"
+                                    data-user-menu-toggle
+                                    aria-label="Abrir sessao do operador"
+                                    aria-expanded="false">
+                                <span class="cf-user-avatar" aria-hidden="true">@operatorInitials</span>
+                            </button>
+
+                            <div class="cf-user-menu-panel cf-user-menu-panel-mobile" data-user-menu-panel>
+                                <div class="cf-user-menu-head">
+                                    <div>
+                                        <div class="cf-user-menu-kicker">Sessao atual</div>
+                                        <div class="cf-user-menu-name">@Model.OperatorName</div>
+                                    </div>
+                                    <span class="cf-user-avatar cf-user-avatar-panel" aria-hidden="true">@operatorInitials</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Operador</div>
+                                    <strong class="cf-user-menu-value">@Model.OperatorRegistration</strong>
+                                    <span class="cf-user-menu-meta">@Model.SectorName</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Data</div>
+                                    <span class="cf-header-date cf-header-date-panel" data-current-date>Carregando data</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Tema</div>
+                                    <button type="button" class="cf-theme-toggle" data-theme-toggle aria-label="Alternar tema" aria-pressed="false">
+                                        <span class="cf-theme-toggle-track" aria-hidden="true">
+                                            <span class="cf-theme-toggle-thumb"></span>
+                                        </span>
+                                        <span class="cf-theme-toggle-text" data-theme-label>Modo escuro</span>
+                                    </button>
+                                </div>
+
+                                <div class="cf-user-menu-footer">
+                                    <span class="cf-user-chip">@Model.OperatorRegistration</span>
+                                    <form asp-controller="OperatorAccount" asp-action="Logout" method="post" class="mb-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="cf-button cf-button-secondary">Trocar operador</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cf-checklist-hero-copy">
+                    <h1 class="cf-checklist-title">Checklist</h1>
+                    <p class="cf-checklist-subtitle">Preencha todos os itens, registre as nao conformidades e confirme a assinatura do operador.</p>
+                </div>
+
+                <div class="cf-checklist-equipment-grid">
+                    <div class="cf-checklist-equipment-card">
+                        <span class="cf-checklist-equipment-label">Codigo</span>
+                        <strong class="cf-checklist-equipment-value">@Model.EquipmentCode</strong>
+                    </div>
+                    <div class="cf-checklist-equipment-card">
+                        <span class="cf-checklist-equipment-label">Category</span>
+                        <strong class="cf-checklist-equipment-value">@Model.CategoryName</strong>
+                    </div>
+                    <div class="cf-checklist-equipment-card cf-checklist-equipment-card-wide">
+                        <span class="cf-checklist-equipment-label">Description</span>
+                        <strong class="cf-checklist-equipment-value">@Model.EquipmentDescription</strong>
+                    </div>
+                    <div class="cf-checklist-equipment-card cf-checklist-equipment-card-wide">
+                        <span class="cf-checklist-equipment-label">QR ID</span>
+                        <strong class="cf-checklist-equipment-value">@Model.EquipmentQrId</strong>
+                    </div>
+                </div>
+
+                <div class="cf-checklist-hero-form">
+                    <section class="cf-checklist-hero-panel">
+                        <div class="cf-checklist-hero-panel-head">
+                            <div class="cf-checklist-hero-panel-icon">OP</div>
+
+                            <div class="cf-checklist-section-copy">
+                                <h2 class="cf-checklist-hero-panel-title">Operator</h2>
+                                <p class="cf-checklist-hero-panel-text">Checklist vinculado ao operador autenticado na sessao operacional.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="cf-field-label cf-checklist-hero-label">Operator autenticado</label>
+                            <div class="cf-mobile-input cf-checklist-hero-input selected cf-operator-readonly">
+                                <strong>@Model.OperatorName</strong>
+                                <span>@Model.OperatorRegistration · @Model.SectorName</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="cf-checklist-hero-panel">
+                        <div class="cf-checklist-hero-panel-head">
+                            <div class="cf-checklist-hero-panel-icon">OBS</div>
+
+                            <div class="cf-checklist-section-copy">
+                                <h2 class="cf-checklist-hero-panel-title">Observacoes gerais</h2>
+                                <p class="cf-checklist-hero-panel-text">Registre detalhes adicionais antes da assinatura.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="cf-field-label cf-checklist-hero-label" asp-for="GeneralNotes">Observacoes</label>
+                            <textarea asp-for="GeneralNotes" rows="4" class="cf-mobile-textarea cf-checklist-hero-input cf-checklist-hero-textarea" placeholder="Digite observacoes adicionais"></textarea>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <section class="cf-checklist-workspace">
+                <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+
+                <section class="cf-checklist-items">
+                    <div class="cf-checklist-items-head">
+                        <div>
+                            <h2 class="cf-checklist-section-title">Items do checklist</h2>
+                            <p class="cf-checklist-section-text">Marque cada item antes de seguir para a assinatura.</p>
+                        </div>
+                        <span class="cf-count">@Model.Items.Count</span>
+                    </div>
+
+                    <div class="cf-checklist-items-grid">
+                        @for (var index = 0; index < Model.Items.Count; index++)
+                        {
+                            var item = Model.Items[index];
+                            var statusTargetId = $"status-{index}";
+                            var nokBlockId = $"nok-block-{index}";
+                            var imageBase64Id = $"image-base64-{index}";
+                            var imageNameId = $"image-name-{index}";
+                            var imageTypeId = $"image-type-{index}";
+                            var imagePreviewId = $"image-preview-{index}";
+                            var imageNameLabelId = $"image-label-{index}";
+
+                            <article class="cf-checklist-item">
+                                <input asp-for="Items[index].TemplateId" type="hidden" />
+                                <input asp-for="Items[index].Order" type="hidden" />
+                                <input asp-for="Items[index].Description" type="hidden" />
+                                <input asp-for="Items[index].Instruction" type="hidden" />
+                                <input asp-for="Items[index].Status" type="hidden" id="@statusTargetId" />
+                                <input asp-for="Items[index].NokImageBase64" type="hidden" id="@imageBase64Id" />
+                                <input asp-for="Items[index].NokImageFileName" type="hidden" id="@imageNameId" />
+                                <input asp-for="Items[index].NokImageMimeType" type="hidden" id="@imageTypeId" />
+
+                                <div class="cf-checklist-item-top">
+                                    <div class="cf-checklist-item-heading">
+                                        <div class="cf-checklist-item-order">@item.Order</div>
+                                        <h3 class="cf-checklist-item-title">@item.Description</h3>
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(item.Instruction))
+                                    {
+                                        <p class="cf-checklist-item-text">@item.Instruction</p>
+                                    }
+                                </div>
+
+                                <div class="cf-checklist-status-grid" data-status-group data-target="@statusTargetId" data-nok-target="@nokBlockId">
+                                    <button type="button" class="cf-checklist-status @(string.Equals(item.Status, "OK", StringComparison.OrdinalIgnoreCase) ? "is-ok" : string.Empty)" data-status-value="OK">OK</button>
+                                    <button type="button" class="cf-checklist-status @(string.Equals(item.Status, "NOK", StringComparison.OrdinalIgnoreCase) ? "is-nok" : string.Empty)" data-status-value="NOK">NOK</button>
+                                    <button type="button" class="cf-checklist-status @(string.Equals(item.Status, "NA", StringComparison.OrdinalIgnoreCase) ? "is-na" : string.Empty)" data-status-value="NA">N/A</button>
+                                </div>
+
+                                <div class="cf-checklist-item-note" id="@nokBlockId" style="@(string.Equals(item.Status, "NOK", StringComparison.OrdinalIgnoreCase) ? null : "display:none;")">
+                                    <div>
+                                        <label class="cf-field-label" asp-for="Items[index].Notes">Notes do item</label>
+                                        <textarea asp-for="Items[index].Notes" rows="3" class="cf-mobile-textarea" placeholder="Descreva a nao conformidade"></textarea>
+                                    </div>
+
+                                    <div class="cf-checklist-upload-block">
+                                        <div class="cf-checklist-upload-head">
+                                            <div>
+                                                <label class="cf-field-label">Imagem do item NOK</label>
+                                                <div class="cf-checklist-upload-meta">Anexe uma foto para registrar visualmente a nao conformidade.</div>
+                                            </div>
+                                        </div>
+
+                                        <label class="cf-checklist-upload-button">
+                                            <input type="file" accept="image/*" class="cf-checklist-upload-input" data-image-input data-base64-target="@imageBase64Id" data-name-target="@imageNameId" data-type-target="@imageTypeId" data-preview-target="@imagePreviewId" data-preview-name="@imageNameLabelId" />
+                                            Selecionar ou tirar foto
+                                        </label>
+
+                                        <div class="cf-checklist-image-preview @(string.IsNullOrWhiteSpace(item.NokImageBase64) ? "is-hidden" : string.Empty)" id="@imagePreviewId">
+                                            <img class="cf-checklist-image-preview-img" src="@item.NokImageBase64" alt="Imagem do item NOK" />
+                                            <div class="cf-checklist-image-preview-footer">
+                                                <span class="cf-checklist-image-preview-name" id="@imageNameLabelId">@item.NokImageFileName</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                </section>
+
+                <section class="cf-checklist-items cf-checklist-signature-section">
+                    <div class="cf-checklist-items-head">
+                        <div>
+                            <h2 class="cf-checklist-section-title">Assinatura do operador</h2>
+                            <p class="cf-checklist-section-text">Assine no quadro abaixo para concluir o envio do checklist.</p>
+                        </div>
+                    </div>
+
+                    <div class="cf-checklist-signature-shell">
+                        <canvas id="signature-canvas" class="cf-signature-canvas" width="900" height="260"></canvas>
+                    </div>
+
+                    <div class="cf-checklist-signature-actions">
+                        <button type="button" id="clear-signature" class="cf-button cf-button-secondary">Limpar assinatura</button>
+                        <button type="submit" class="cf-button cf-button-primary cf-checklist-primary-action">Enviar checklist</button>
+                    </div>
+                </section>
+            </section>
+        </form>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            const signatureInput = document.getElementById("signature-value");
+            const canvas = document.getElementById("signature-canvas");
+            const clearButton = document.getElementById("clear-signature");
+
+            if (canvas instanceof HTMLCanvasElement) {
+                const context = canvas.getContext("2d");
+                let drawing = false;
+                let hasSignature = false;
+
+                function resizeCanvas() {
+                    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+                    const rect = canvas.getBoundingClientRect();
+                    const width = Math.max(rect.width, 320);
+                    const height = 260;
+
+                    const existingValue = signatureInput.value;
+                    canvas.width = Math.floor(width * ratio);
+                    canvas.height = Math.floor(height * ratio);
+                    canvas.style.height = height + "px";
+                    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+                    context.lineWidth = 2.4;
+                    context.lineCap = "round";
+                    context.lineJoin = "round";
+                    context.strokeStyle = "#0f172a";
+                    context.fillStyle = "#ffffff";
+                    context.fillRect(0, 0, width, height);
+
+                    if (existingValue) {
+                        const image = new Image();
+                        image.onload = function () {
+                            context.drawImage(image, 0, 0, width, height);
+                            hasSignature = true;
+                        };
+                        image.src = existingValue;
+                    }
+                }
+
+                function getPoint(event) {
+                    const rect = canvas.getBoundingClientRect();
+                    const source = event.touches ? event.touches[0] : event;
+                    return {
+                        x: source.clientX - rect.left,
+                        y: source.clientY - rect.top
+                    };
+                }
+
+                function beginDraw(event) {
+                    drawing = true;
+                    const point = getPoint(event);
+                    context.beginPath();
+                    context.moveTo(point.x, point.y);
+                    event.preventDefault();
+                }
+
+                function moveDraw(event) {
+                    if (!drawing) {
+                        return;
+                    }
+
+                    const point = getPoint(event);
+                    context.lineTo(point.x, point.y);
+                    context.stroke();
+                    hasSignature = true;
+                    signatureInput.value = canvas.toDataURL("image/png");
+                    event.preventDefault();
+                }
+
+                function endDraw() {
+                    drawing = false;
+                    if (hasSignature) {
+                        signatureInput.value = canvas.toDataURL("image/png");
+                    }
+                }
+
+                function clearSignature() {
+                    hasSignature = false;
+                    signatureInput.value = "";
+                    resizeCanvas();
+                }
+
+                canvas.addEventListener("mousedown", beginDraw);
+                canvas.addEventListener("mousemove", moveDraw);
+                canvas.addEventListener("mouseup", endDraw);
+                canvas.addEventListener("mouseleave", endDraw);
+                canvas.addEventListener("touchstart", beginDraw, { passive: false });
+                canvas.addEventListener("touchmove", moveDraw, { passive: false });
+                canvas.addEventListener("touchend", endDraw);
+                clearButton.addEventListener("click", clearSignature);
+                window.addEventListener("resize", resizeCanvas);
+                resizeCanvas();
+            }
+
+            document.querySelectorAll("[data-status-group]").forEach(function (group) {
+                const targetId = group.getAttribute("data-target");
+                const nokTargetId = group.getAttribute("data-nok-target");
+                const targetInput = targetId ? document.getElementById(targetId) : null;
+                const nokBlock = nokTargetId ? document.getElementById(nokTargetId) : null;
+                const buttons = Array.from(group.querySelectorAll("[data-status-value]"));
+
+                function updateVisuals(value) {
+                    buttons.forEach(function (button) {
+                        const buttonValue = button.getAttribute("data-status-value");
+                        button.classList.remove("is-ok", "is-nok", "is-na");
+
+                        if (buttonValue === value) {
+                            if (value === "OK") button.classList.add("is-ok");
+                            if (value === "NOK") button.classList.add("is-nok");
+                            if (value === "NA") button.classList.add("is-na");
+                        }
+                    });
+
+                    if (nokBlock) {
+                        nokBlock.style.display = value === "NOK" ? "" : "none";
+                    }
+                }
+
+                buttons.forEach(function (button) {
+                    button.addEventListener("click", function () {
+                        const value = button.getAttribute("data-status-value") || "NotChecked";
+                        if (targetInput instanceof HTMLInputElement) {
+                            targetInput.value = value;
+                        }
+                        updateVisuals(value);
+                    });
+                });
+
+                const initialValue = targetInput instanceof HTMLInputElement ? targetInput.value : "NotChecked";
+                updateVisuals(initialValue);
+            });
+
+            document.querySelectorAll("[data-image-input]").forEach(function (element) {
+                if (!(element instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                element.addEventListener("change", function () {
+                    const file = element.files && element.files[0];
+                    if (!file) {
+                        return;
+                    }
+
+                    const base64Target = document.getElementById(element.dataset.base64Target);
+                    const nameTarget = document.getElementById(element.dataset.nameTarget);
+                    const typeTarget = document.getElementById(element.dataset.typeTarget);
+                    const preview = document.getElementById(element.dataset.previewTarget);
+                    const previewName = document.getElementById(element.dataset.previewName);
+                    const reader = new FileReader();
+
+                    reader.onload = function () {
+                        const result = typeof reader.result === "string" ? reader.result : "";
+
+                        if (base64Target instanceof HTMLInputElement) {
+                            base64Target.value = result;
+                        }
+
+                        if (nameTarget instanceof HTMLInputElement) {
+                            nameTarget.value = file.name;
+                        }
+
+                        if (typeTarget instanceof HTMLInputElement) {
+                            typeTarget.value = file.type || "image/jpeg";
+                        }
+
+                        if (preview instanceof HTMLElement) {
+                            preview.classList.remove("is-hidden");
+                            const image = preview.querySelector("img");
+                            if (image instanceof HTMLImageElement) {
+                                image.src = result;
+                            }
+                        }
+
+                        if (previewName instanceof HTMLElement) {
+                            previewName.textContent = file.name;
+                        }
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

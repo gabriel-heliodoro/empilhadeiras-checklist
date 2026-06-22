@@ -1,0 +1,95 @@
+@model Checklist.Mvc.ViewModels.StpChecklistDetailsViewModel
+@{
+    ViewData["Title"] = "Detalhe STP";
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">@Model.TemplateCode</h1>
+            <p class="cf-page-subtitle">@Model.TemplateName</p>
+        </div>
+        <div class="cf-management-actions">
+            <a asp-action="Checklists" class="btn btn-outline-secondary">Voltar</a>
+        </div>
+    </div>
+
+    <section class="cf-document-shell">
+        <div class="cf-document-hero">
+            <div class="cf-document-kicker">Checklist STP</div>
+            <h2 class="cf-document-title">@Model.InspectionAreaName</h2>
+            <p class="cf-document-subtitle">Executado em @Model.CompletedAt.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+        <div class="cf-detail-grid">
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Inspetor</span>
+                <span class="cf-detail-value">@Model.InspectorName</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Responsavel</span>
+                <span class="cf-detail-value">@Model.ResponsibleName</span>
+            </div>
+            <div class="cf-detail-meta">
+                <span class="cf-detail-label">Data referencia</span>
+                <span class="cf-detail-value">@Model.ReferenceDate.ToString("dd/MM/yyyy")</span>
+            </div>
+        </div>
+        <div class="cf-document-section">
+            <h3 class="cf-section-title">Itens avaliados</h3>
+            <div class="cf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Resultado</th>
+                            <th>Observacao</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="cf-data-row">
+                                <td>
+                                    <strong>@item.Order</strong><br />
+                                    <span class="text-secondary">@item.Description</span>
+                                </td>
+                                <td><span class="cf-badge @(item.Result == "Check" ? "cf-badge-success" : "cf-badge-danger")">@item.Result</span></td>
+                                <td>@item.Notes</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="cf-document-section pt-0">
+            <h3 class="cf-section-title">Observacoes gerais</h3>
+            <div class="cf-detail-grid">
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Comportamentos preventivos</div>
+                    <p class="cf-naook-detail-copy">@Model.ObservedPreventiveBehaviors</p>
+                </div>
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Atos inseguros</div>
+                    <p class="cf-naook-detail-copy">@Model.ObservedUnsafeActs</p>
+                </div>
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Condicoes inseguras</div>
+                    <p class="cf-naook-detail-copy">@Model.VerifiedUnsafeConditions</p>
+                </div>
+            </div>
+        </div>
+        <div class="cf-document-section pt-0">
+            <h3 class="cf-section-title">Rastreabilidade</h3>
+            <div class="cf-detail-grid">
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Checklist validado por</div>
+                    <div class="cf-detail-value">@Model.InspectorName</div>
+                </div>
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Responsavel associado a area</div>
+                    <div class="cf-detail-value">@Model.ResponsibleName</div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

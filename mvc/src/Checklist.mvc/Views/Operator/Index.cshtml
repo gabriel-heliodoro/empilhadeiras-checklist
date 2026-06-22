@@ -1,0 +1,175 @@
+@model Checklist.Mvc.ViewModels.OperatorEquipmentSearchViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Operacao de checklist";
+    var successMessage = TempData["OperatorSuccessMessage"] as string;
+    var errorMessage = TempData["OperatorErrorMessage"] as string;
+    var operatorInitials = string.Concat((Model.OperatorName ?? string.Empty)
+        .Split(new[] { ' ', '.', '-', '_' }, StringSplitOptions.RemoveEmptyEntries)
+        .Where(part => !string.IsNullOrWhiteSpace(part))
+        .Take(2)
+        .Select(part => char.ToUpperInvariant(part[0]).ToString()));
+    if (string.IsNullOrWhiteSpace(operatorInitials))
+    {
+        operatorInitials = "OP";
+    }
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CheckFlow</title>
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem("checkflow-theme") || "light";
+                document.documentElement.setAttribute("data-theme", savedTheme);
+            } catch (error) {
+                document.documentElement.setAttribute("data-theme", "light");
+            }
+        })();
+    </script>
+    <link rel="icon" type="image/png" href="/assets/brand/Logo-reduzida.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="cf-mobile-page">
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-top"></div>
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-bottom"></div>
+
+        <div class="cf-mobile-shell">
+            <section class="cf-mobile-brand-surface">
+                <div class="cf-mobile-brand-row">
+                    <div class="cf-mobile-brand-row-main">
+                        <img src="/assets/brand/Logo-reduzida.png" alt="CheckFlow" class="logo-reduzida" />
+
+                        <div>
+                            <div class="cf-mobile-brand-meta">Operacao de checklist</div>
+                        </div>
+                    </div>
+
+                    <div class="cf-mobile-brand-actions">
+                        <div class="cf-user-menu cf-user-menu-mobile" data-user-menu>
+                            <button type="button"
+                                    class="cf-user-menu-toggle"
+                                    data-user-menu-toggle
+                                    aria-label="Abrir sessao do operador"
+                                    aria-expanded="false">
+                                <span class="cf-user-avatar" aria-hidden="true">@operatorInitials</span>
+                            </button>
+
+                            <div class="cf-user-menu-panel cf-user-menu-panel-mobile" data-user-menu-panel>
+                                <div class="cf-user-menu-head">
+                                    <div>
+                                        <div class="cf-user-menu-kicker">Sessao atual</div>
+                                        <div class="cf-user-menu-name">@Model.OperatorName</div>
+                                    </div>
+                                    <span class="cf-user-avatar cf-user-avatar-panel" aria-hidden="true">@operatorInitials</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Operador</div>
+                                    <strong class="cf-user-menu-value">@Model.OperatorRegistration</strong>
+                                    <span class="cf-user-menu-meta">@Model.SectorName</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Data</div>
+                                    <span class="cf-header-date cf-header-date-panel" data-current-date>Carregando data</span>
+                                </div>
+
+                                <div class="cf-user-menu-section">
+                                    <div class="cf-user-menu-label">Tema</div>
+                                    <button type="button" class="cf-theme-toggle" data-theme-toggle aria-label="Alternar tema" aria-pressed="false">
+                                        <span class="cf-theme-toggle-track" aria-hidden="true">
+                                            <span class="cf-theme-toggle-thumb"></span>
+                                        </span>
+                                        <span class="cf-theme-toggle-text" data-theme-label>Modo escuro</span>
+                                    </button>
+                                </div>
+
+                                <div class="cf-user-menu-footer">
+                                    <span class="cf-user-chip">@Model.OperatorRegistration</span>
+                                    <form asp-controller="OperatorAccount" asp-action="Logout" method="post" class="mb-0">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="cf-button cf-button-secondary">Trocar operador</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="cf-alert cf-alert-success">@successMessage</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="cf-alert cf-alert-error">@errorMessage</div>
+            }
+
+            <section class="cf-mobile-surface cf-mobile-surface-attached">
+                <div class="cf-mobile-panel-header">
+                    <div class="cf-mobile-panel-icon">OP</div>
+
+                    <div>
+                        <h1 class="cf-mobile-panel-title">Iniciar checklist</h1>
+                        <p class="cf-mobile-panel-text">Busque o equipamento por codigo ou QR ID para abrir a inspecao operacional.</p>
+                    </div>
+                </div>
+
+                <div class="cf-mobile-stack">
+                    <div class="cf-operator-session-box">
+                        <div class="cf-operator-session-head">
+                            <div>
+                                <div class="cf-operator-session-name">@Model.OperatorName</div>
+                                <div class="cf-operator-session-meta">@Model.OperatorRegistration · @Model.SectorName</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="get" asp-action="Index" class="cf-mobile-field-stack">
+                        <div>
+                            <label class="cf-field-label" for="q">Codigo ou QR ID</label>
+                            <div class="cf-mobile-input-shell">
+                                <input id="q" name="q" value="@Model.Query" placeholder="Ex.: EMP-061 ou GUID do QR" class="cf-mobile-input" />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="cf-mobile-submit">Buscar equipamento</button>
+                    </form>
+
+                    <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Query))
+                    {
+                        if (Model.Results.Count == 0)
+                        {
+                            <div class="cf-alert cf-alert-error">Nenhum equipamento ativo do setor corresponde ao termo informado.</div>
+                        }
+                        else
+                        {
+                            <div class="cf-checklist-suggestions">
+                                @foreach (var item in Model.Results)
+                                {
+                                    <a class="cf-checklist-suggestion" asp-action="Checklist" asp-route-equipmentId="@item.Id">
+                                        <strong>@item.Code</strong>
+                                        <span>@item.Description · @item.CategoryName</span>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</body>
+</html>

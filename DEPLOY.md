@@ -1,159 +1,140 @@
 # Setup and Deploy
 
-Documento de referência para configuração e execução do CheckFlow.
+Documento de referencia para configuracao e execucao do CheckFlow na arquitetura MVC atual com SQL Server.
 
-## Topologia
+## Topologia atual
 
 ```text
-Usuário
+Usuario
   |
   v
-Frontend SPA
+Checklist.Mvc
   |
   v
-Checklist.Api
+Checklist.Application
   |
   v
-MySQL
+Checklist.Infrastructure
+  |
+  v
+SQL Server
 ```
 
 ## Componentes
 
-### Frontend
+### Aplicacao web
 
-- aplicação React com build estático gerado por Vite
-- publicação do diretório `frontend/checklist-web/dist`
-- integração com a API por `VITE_API_BASE_URL`
+- ASP.NET Core MVC em `mvc/src/Checklist.Mvc`
+- renderizacao server-side com controllers e Razor Views
+- autenticacao por cookie
+- rotas administrativas, operacionais e STP no mesmo processo
 
-### Backend
+### Camada de aplicacao
 
-- aplicação ASP.NET Core Web API
-- runtime compatível com .NET 10
-- autenticação JWT
-- integração com banco MySQL
+- casos de uso em `mvc/src/Checklist.Application`
+- DTOs e contratos de leitura/escrita
+
+### Infraestrutura
+
+- EF Core + SQL Server em `mvc/src/Checklist.Infrastructure`
+- `AppDbContext`
+- servicos de autenticacao e persistencia
+- integracao com Active Directory para supervisor quando o host e Windows
 
 ### Banco de dados
 
-- instância MySQL acessível pelo backend
-- credencial de aplicação com permissões compatíveis com o sistema
+- SQL Server para persistencia principal
+- banco em memoria apenas como fallback local sem conexao configurada
 
-## Configuração da API
+## Modos de deploy
 
-Variáveis mínimas:
+### 1. Execucao local ou na rede interna com SQL Server existente
 
-- `ConnectionStrings__Default`
-- `Auth__JwtKey`
-- `Auth__Issuer`
-- `Auth__Audience`
+Esse e o modo recomendado para o seu cenario atual.
 
-Variáveis recomendadas:
+Requisitos:
 
-- `Cors__AllowedOrigins`
-- `ASPNETCORE_ENVIRONMENT`
-
-Exemplo:
-
-```env
-ConnectionStrings__Default=Server=HOST;Port=3306;Database=CHECKFLOW;User ID=USUARIO;Password=SENHA;SslMode=Required;
-Auth__JwtKey=CHAVE_FORTE_DA_APLICACAO
-Auth__Issuer=CheckFlow.Api
-Auth__Audience=CheckFlow.Web
-```
-
-## Configuração do frontend
-
-Variável principal:
-
-- `VITE_API_BASE_URL`
+- host Windows
+- acesso ao SQL Server local ou corporativo
+- `ConnectionStrings__Default` configurada
+- `Authentication__Mode=ActiveDirectory` quando quiser validar supervisor no AD real
 
 Exemplo:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5204
+ASPNETCORE_ENVIRONMENT=Production
+ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;
+Authentication__Mode=ActiveDirectory
+ActiveDirectory__Domain=""""
+ActiveDirectory__Container=""
 ```
 
-## CORS
+## Variaveis principais
 
-Quando necessário, configure origens explícitas no backend.
+### Banco
 
-Exemplo:
-
-```json
-{
-  "Cors": {
-    "AllowedOrigins": [
-      "http://localhost:5173"
-    ]
-  }
-}
+```env
+ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;
 ```
 
-## Banco e migrations
+### Autenticacao
 
-Diretrizes:
-
-- migrations executadas de forma controlada
-- seed inicial executado de forma explícita
-- ausência de dependência de automação de startup para evolução de esquema
-
-Comando para aplicar migrations:
-
-```powershell
-dotnet ef database update --project backend/Checklist.Api/Checklist.Api.csproj --startup-project backend/Checklist.Api/Checklist.Api.csproj
+```env
+Authentication__Mode=ActiveDirectory
+ActiveDirectory__Domain=""
+ActiveDirectory__Container=""
 ```
 
-## Sequência de execução
+### Bind HTTP
 
-1. configurar variáveis do backend
-2. validar conectividade com o banco
-3. aplicar migrations
-4. iniciar a API
-5. validar `GET /health`
-6. configurar `VITE_API_BASE_URL`
-7. iniciar ou publicar o frontend
-
-## Healthcheck
-
-Endpoint:
-
-```text
-GET /health
+```env
+ASPNETCORE_URLS=http://0.0.0.0:8080
 ```
 
-Resposta esperada:
+## Sequencia de deploy
 
-```json
-{"status":"ok"}
-```
+1. Configurar variaveis de ambiente da aplicacao MVC
+2. Validar conectividade com o SQL Server
+3. Definir o modo de autenticacao
+4. Subir a aplicacao
+5. Validar login administrativo
+6. Validar login operacional
+7. Validar fluxos criticos
 
-## Validação
+## Validacao recomendada
 
-### Backend
+### Supervisor
 
-- inicialização sem exceção
-- conexão com banco estabelecida
-- emissão de JWT funcional
-- healthcheck operacional
+- acesso a `/account/login`
+- autenticacao bem sucedida
+- dashboard carrega
+- catalogos carregam
+- itens non-compliant carregam
 
-### Frontend
+### Operador
 
-- carregamento da SPA sem erro de roteamento
-- comunicação com a API estabelecida
-- login administrativo funcional
-- login operacional funcional
+- acesso a `/operacao`
+- redirecionamento correto para `/operador/login`
+- checklist abre por QR ID
+- checklist envia com assinatura
 
-### Fluxos críticos
+### STP
 
-- envio de checklist operacional
-- visualização de histórico em supervisão
-- processamento de não conformidades
-- inspeções STP
-- controle documental STP
-- fechamento mensal
+- dashboard STP
+- cadastro de areas
+- checklist STP
+- documentos
 
-## Referências
+## Observacoes operacionais
+
+- Nao existe endpoint `/health` dedicado na linha MVC atual.
+- O bootstrap local usa `EnsureCreatedAsync` quando o schema ainda nao existe.
+- O projeto nao depende mais de Docker Compose para o fluxo local.
+
+## Referencias
 
 - [README.md](README.md)
+- [infra/README.md](infra/README.md)
 - [docs/architecture.md](docs/architecture.md)
 - [docs/api-overview.md](docs/api-overview.md)
-- [docs/mysql-corporate-migration-guide.md](docs/mysql-corporate-migration-guide.md)
+- [docs/sqlserver-corporate-migration-guide.md](docs/sqlserver-corporate-migration-guide.md)

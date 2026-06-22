@@ -1,65 +1,113 @@
-# API Overview
+# Route Overview
 
-## Auth
+Este documento nao descreve mais uma Web API publica em JSON.
+Na arquitetura atual, o CheckFlow expõe principalmente rotas MVC com Razor Views e formularios.
 
-### Administrativo
+## Acesso administrativo
 
-- `POST /api/auth/login`
+- `GET /account/login`
+- `POST /account/login`
+- `POST /account/logout`
 
-### Operador
+Uso:
 
-- `POST /api/operadores-auth/login`
-- `GET /api/operadores-auth/me`
-- `POST /api/operadores-auth/definir-nova-senha`
+- autenticacao de supervisor, master e inspector
+- cria sessao por cookie
 
-## Administração
+## Acesso operacional
 
-### Setores
+- `GET /operacao`
+- `POST /operacao`
 
-- endpoints de cadastro e listagem de setores
+Uso:
 
-### Operadores
+- ponto de entrada simplificado para operador via QR ID
+- redireciona para login do operador quando necessario
 
-- endpoints de cadastro, edição e listagem de operadores
+## Conta do operador
 
-### Equipamentos
+- `GET /operador/login`
+- `POST /operador/login`
+- `GET /operador/primeiro-acesso`
+- `POST /operador/primeiro-acesso`
+- `POST /operador/logout`
 
-- endpoints de catálogo de equipamentos
+## Fluxo do operador
 
-### Templates
+- `GET /operador`
+- `GET /operador/checklists/{equipmentId}`
+- `GET /operador/checklists/qr/{qrId}`
+- `POST /operador/checklists/{equipmentId}`
 
-- endpoints de template de checklist operacional
+## Dashboard e historico do supervisor
 
-## Checklist operacional
+- `GET /`
+- `GET /checklists`
+- `GET /checklists/{id}`
+- `GET /non-ok`
+- `GET /non-ok/lista`
+- `GET /non-ok/{id}`
+- `POST /non-ok/{id}/atribuir`
+- `POST /non-ok/{id}/tratativa`
+- `POST /non-ok/{id}/concluir`
 
-- `POST /api/checklists`
-- endpoints auxiliares de consulta de equipamento, histórico e detalhes relacionados
+## Catalogos operacionais
 
-## Supervisão
+- `GET /catalog/categories`
+- `POST /catalog/categories`
+- `POST /catalog/categories/{id}/delete`
 
-### Dashboard e histórico
+- `GET /catalog/templates`
+- `POST /catalog/templates`
+- `POST /catalog/templates/{id}/delete`
 
-- endpoints em `Controllers/Features/Supervisor/Dashboard`
-- endpoints em `Controllers/Features/Supervisor/Checklists`
+- `GET /catalog/operators`
+- `POST /catalog/operators`
 
-### Itens não conformes
+- `GET /catalog/equipment`
+- `POST /catalog/equipment`
 
-- endpoints em `Controllers/Features/Supervisor/NaoOk`
+## Fechamento mensal
+
+- `GET /monthly-closures`
+- `POST /monthly-closures/close`
+- `GET /monthly-closures/{id}/download`
+
+## Master
+
+- `GET /master/sectors`
+- `POST /master/sectors`
+- `GET /master/supervisors`
+- `POST /master/supervisors`
+- `GET /master/inspectors`
+- `POST /master/inspectors`
 
 ## STP
 
-### Áreas
+- `GET /stp/dashboard`
+- `GET /stp/areas`
+- `POST /stp/areas`
+- `GET /stp/checklists/new`
+- `POST /stp/checklists/new`
+- `GET /stp/checklists`
+- `GET /stp/checklists/{id}`
 
-- endpoints em `StpAreasController`
+## Documentos STP
 
-### Inspeções
+- `GET /stp/documents`
+- `POST /stp/documents/companies`
+- `GET /stp/documents/companies/{companyId}`
+- `POST /stp/documents/companies/{companyId}`
+- `POST /stp/documents/companies/{companyId}/upload`
+- `GET /stp/documents/company-files/{documentId}`
+- `POST /stp/documents/companies/{companyId}/employees`
+- `GET /stp/documents/employees/{employeeId}`
+- `POST /stp/documents/employees/{employeeId}`
+- `POST /stp/documents/employees/{employeeId}/upload`
+- `GET /stp/documents/employee-files/{documentId}`
 
-- endpoints em `StpController`
+## Observacoes
 
-### Controle de documentos
-
-- endpoints em `StpDocumentControlController`
-
-## Health
-
-- `GET /health`
+- Nao existe endpoint `/health` dedicado na linha MVC atual.
+- As rotas acima retornam HTML, redirecionamentos, download de arquivo ou submissao de formulario, conforme o caso.
+- Se no futuro uma API publica em JSON voltar a existir, ela deve ser documentada separadamente.

@@ -1,0 +1,79 @@
+@model Checklist.Mvc.ViewModels.OperatorFirstAccessViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Primeiro acesso do operador";
+}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - CheckFlow</title>
+    <link rel="icon" type="image/png" href="/assets/brand/Logo-reduzida.png" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <div class="cf-mobile-page">
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-top"></div>
+        <div class="cf-mobile-backdrop cf-mobile-backdrop-bottom"></div>
+
+        <div class="cf-login-shell cf-operator-auth-shell cf-auth-shell">
+            <section class="cf-auth-stage">
+                <div class="cf-auth-panel cf-auth-panel-brand">
+                    <div class="cf-login-brand">
+                        <div class="cf-login-brand-row cf-login-brand-row-image">
+                            <img src="/assets/brand/Logo-Compacta.png" alt="CheckFlow" class="logo-compacta cf-login-compact-brand-image" />
+                        </div>
+                        <div class="cf-auth-kicker">Primeiro acesso</div>
+                        <div class="cf-login-brand-subtitle">Atualizacao inicial de senha</div>
+                    </div>
+
+                    <div class="cf-auth-copy">
+                        <h2 class="cf-auth-title">Confirme sua identidade e defina a nova senha operacional.</h2>
+                        <p class="cf-auth-text">
+                            Esta etapa libera o fluxo de checklist do operador mantendo a rastreabilidade do acesso.
+                        </p>
+                    </div>
+
+                    <div class="cf-operator-info-block">
+                        <div class="cf-operator-info-label">Operator</div>
+                        <div class="cf-operator-info-value">@Model.OperatorName</div>
+                        <div class="cf-operator-info-meta">@Model.OperatorRegistration</div>
+                    </div>
+                </div>
+
+                <section class="cf-auth-panel cf-auth-panel-form">
+                    <div class="cf-auth-form-head">
+                        <h2 class="cf-auth-form-title">Atualizar senha</h2>
+                        <p class="cf-auth-form-text">Preencha a nova senha e confirme para continuar.</p>
+                    </div>
+
+                    <form asp-action="FirstAccess" method="post" class="cf-auth-form">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+
+                        <div>
+                            <label asp-for="NewPassword" class="cf-field-label"></label>
+                            <input asp-for="NewPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div>
+                            <label asp-for="ConfirmPassword" class="cf-field-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Atualizar senha e continuar</button>
+                    </form>
+                </section>
+            </section>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+@model Checklist.Mvc.ViewModels.StpChecklistEditorPageViewModel
+@{
+    ViewData["Title"] = "Nova inspecao STP";
+    var hasTemplate = Model.Items.Count > 0;
+}
+
+<div class="cf-page">
+    <div class="cf-page-header">
+        <div>
+            <h1 class="cf-page-title">Nova inspecao STP</h1>
+            <p class="cf-page-subtitle">Atribuicao e validacao baseadas no usuario logado.</p>
+        </div>
+        <div class="cf-management-actions">
+            <a asp-action="Dashboard" class="btn btn-outline-secondary">Voltar</a>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
+    }
+
+    <section class="cf-checklist-hero">
+        <div class="cf-checklist-brand">
+            <img src="/assets/brand/Logo-reduzida.png" alt="CheckFlow" class="logo-reduzida" />
+            <div>
+                <div class="cf-checklist-brand-meta">Inspecao de area</div>
+            </div>
+        </div>
+
+        <div>
+            <h2 class="cf-checklist-title">Contexto da inspecao</h2>
+            <p class="cf-checklist-subtitle">Defina a area e o template antes de abrir os itens.</p>
+        </div>
+
+        <form asp-action="NewChecklist" method="get" class="cf-checklist-hero-form">
+            <div class="cf-checklist-hero-panel">
+                <label asp-for="AreaId" class="cf-field-label text-white">Area</label>
+                <select asp-for="AreaId" name="areaId" class="cf-checklist-hero-input">
+                    <option value="">Selecione</option>
+                    @foreach (var option in Model.AreaOptions)
+                    {
+                        <option value="@option.Id">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="cf-checklist-hero-panel">
+                <label asp-for="TemplateId" class="cf-field-label text-white">Template</label>
+                <select asp-for="TemplateId" name="templateId" class="cf-checklist-hero-input">
+                    <option value="">Selecione</option>
+                    @foreach (var option in Model.TemplateOptions)
+                    {
+                        <option value="@option.Id">@option.Label</option>
+                    }
+                </select>
+            </div>
+            <div class="cf-checklist-equipment-card">
+                <span class="cf-checklist-equipment-label">Usuario logado</span>
+                <strong class="cf-checklist-equipment-value">@Model.InspectorName</strong>
+            </div>
+            <div class="cf-checklist-equipment-card">
+                <span class="cf-checklist-equipment-label">Responsavel da area</span>
+                <strong class="cf-checklist-equipment-value">@(!string.IsNullOrWhiteSpace(Model.ResponsibleName) ? Model.ResponsibleName : "Selecione uma area")</strong>
+            </div>
+            <div class="cf-checklist-equipment-card cf-checklist-equipment-card-wide">
+                <span class="cf-checklist-equipment-label">Template selecionado</span>
+                <strong class="cf-checklist-equipment-value">@(!string.IsNullOrWhiteSpace(Model.TemplateCode) ? $"{Model.TemplateCode} - {Model.TemplateName}" : "Selecione um template")</strong>
+            </div>
+            <div class="cf-management-actions">
+                <button type="submit" class="btn btn-light">Carregar checklist</button>
+            </div>
+        </form>
+    </section>
+
+    @if (hasTemplate)
+    {
+        <form asp-action="NewChecklist" method="post" class="cf-checklist-workspace">
+            @Html.AntiForgeryToken()
+            <input asp-for="AreaId" type="hidden" />
+            <input asp-for="TemplateId" type="hidden" />
+            <input asp-for="InspectorName" type="hidden" />
+            <input asp-for="ResponsibleName" type="hidden" />
+            <input asp-for="TemplateCode" type="hidden" />
+            <input asp-for="TemplateName" type="hidden" />
+
+            <section class="cf-checklist-items">
+                <div class="cf-checklist-items-head">
+                    <div>
+                        <h2 class="cf-checklist-section-title">Itens da inspecao</h2>
+                        <p class="cf-checklist-section-text">Marque cada item como `Check` ou `X`.</p>
+                    </div>
+                    <span class="cf-count">@Model.Items.Count</span>
+                </div>
+
+                <div class="cf-checklist-items-grid">
+                    @for (var index = 0; index < Model.Items.Count; index++)
+                    {
+                        <article class="cf-checklist-item">
+                            <input asp-for="Items[index].TemplateItemId" type="hidden" />
+                            <input asp-for="Items[index].Order" type="hidden" />
+                            <input asp-for="Items[index].Description" type="hidden" />
+                            <input asp-for="Items[index].Instruction" type="hidden" />
+
+                            <div class="cf-checklist-item-top">
+                                <div class="cf-checklist-item-heading">
+                                    <div class="cf-checklist-item-order">@Model.Items[index].Order</div>
+                                    <div>
+                                        <h3 class="cf-checklist-item-title">@Model.Items[index].Description</h3>
+                                        @if (!string.IsNullOrWhiteSpace(Model.Items[index].Instruction))
+                                        {
+                                            <p class="cf-checklist-item-text">@Model.Items[index].Instruction</p>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label asp-for="Items[index].Result" class="cf-field-label">Resultado</label>
+                                <select asp-for="Items[index].Result">
+                                    <option value="Check">Check</option>
+                                    <option value="X">X</option>
+                                </select>
+                                <span asp-validation-for="Items[index].Result" class="text-danger"></span>
+                            </div>
+
+                            <div class="cf-checklist-item-note">
+                                <label asp-for="Items[index].Notes" class="cf-field-label">Observacao</label>
+                                <textarea asp-for="Items[index].Notes" rows="3" class="cf-mobile-textarea" placeholder="Obrigatoria quando o item estiver como X."></textarea>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="cf-surface cf-surface-padded">
+                <h2 class="cf-section-title">Observacoes gerais</h2>
+                <div class="cf-management-form">
+                    <div>
+                        <label asp-for="ObservedPreventiveBehaviors" class="cf-field-label"></label>
+                        <textarea asp-for="ObservedPreventiveBehaviors" rows="4" class="cf-mobile-textarea"></textarea>
+                    </div>
+                    <div>
+                        <label asp-for="ObservedUnsafeActs" class="cf-field-label"></label>
+                        <textarea asp-for="ObservedUnsafeActs" rows="4" class="cf-mobile-textarea"></textarea>
+                    </div>
+                    <div>
+                        <label asp-for="VerifiedUnsafeConditions" class="cf-field-label"></label>
+                        <textarea asp-for="VerifiedUnsafeConditions" rows="4" class="cf-mobile-textarea"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <div class="cf-management-actions">
+                <button type="submit" class="btn btn-primary">Salvar inspecao</button>
+            </div>
+        </form>
+    }
+    else
+    {
+        <section class="cf-surface cf-surface-padded">
+            <div class="cf-empty">Selecione uma area e um template para carregar a inspecao STP.</div>
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
