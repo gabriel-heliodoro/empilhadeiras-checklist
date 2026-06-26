@@ -12,15 +12,18 @@ internal class DbStpInspectionService : IStpInspectionService
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
     private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly StpAreaTemplateCatalogService _templateCatalogService;
 
     public DbStpInspectionService(
         AppDbContext dbContext,
         ICurrentUser currentUser,
-        IDateTimeProvider dateTimeProvider)
+        IDateTimeProvider dateTimeProvider,
+        StpAreaTemplateCatalogService templateCatalogService)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
         _dateTimeProvider = dateTimeProvider;
+        _templateCatalogService = templateCatalogService;
     }
 
     public async Task<Result<StpDashboardDto>> GetDashboardAsync(CancellationToken cancellationToken = default)
@@ -171,6 +174,8 @@ internal class DbStpInspectionService : IStpInspectionService
             return Result<StpChecklistDraftDto>.Fail("Usuario sem setor vinculado.");
         }
 
+        await _templateCatalogService.EnsureDefaultsForSectorAsync(sectorId, cancellationToken);
+
         var areas = await _dbContext.StpInspectionAreas
             .AsNoTracking()
             .Include(x => x.ResponsibleSupervisor)
@@ -203,11 +208,13 @@ internal class DbStpInspectionService : IStpInspectionService
 
         var selectedArea = areaId.HasValue
             ? areas.FirstOrDefault(x => x.Id == areaId.Value)
-            : areas.FirstOrDefault();
+            : null;
 
-        var effectiveTemplateId = templateId.HasValue && templates.Any(x => x.Id == templateId.Value)
-            ? templateId
-            : templates.FirstOrDefault()?.Id;
+        var effectiveTemplateId = selectedArea is null
+            ? null
+            : templateId.HasValue && templates.Any(x => x.Id == templateId.Value)
+                ? templateId
+                : templates.FirstOrDefault()?.Id;
 
         StpTemplateDetailDto? selectedTemplate = null;
         if (effectiveTemplateId.HasValue)
@@ -324,16 +331,17 @@ internal class DbStpInspectionService : IStpInspectionService
         {
             var requestItem = requestItemsById[templateItem.Id];
             var normalizedResult = NormalizeRequired(requestItem.Result);
-            if (!string.Equals(normalizedResult, "Check", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(normalizedResult, "X", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(normalizedResult, "OK", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(normalizedResult, "NOK", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(normalizedResult, "NA", StringComparison.OrdinalIgnoreCase))
             {
-                return Result<StpChecklistResultDto>.Fail($"O item {templateItem.Order} precisa ser marcado como Check ou X.");
+                return Result<StpChecklistResultDto>.Fail($"O item {templateItem.Order} precisa ser marcado como OK, NOK ou NA.");
             }
 
-            if (string.Equals(normalizedResult, "X", StringComparison.OrdinalIgnoreCase)
+            if (string.Equals(normalizedResult, "NOK", StringComparison.OrdinalIgnoreCase)
                 && NormalizeRequired(requestItem.Notes) is null)
             {
-                return Result<StpChecklistResultDto>.Fail($"O item {templateItem.Order} exige observacao quando marcado com X.");
+                return Result<StpChecklistResultDto>.Fail($"O item {templateItem.Order} exige observacao quando marcado como NOK.");
             }
         }
 
@@ -346,7 +354,8 @@ internal class DbStpInspectionService : IStpInspectionService
             TemplateId = template.Id,
             InspectorSupervisorId = _currentUser.Id.Value,
             PresentResponsibleName = (area.ResponsibleSupervisor.Name + " " + area.ResponsibleSupervisor.LastName).Trim(),
-            PresentResponsibleRole = "Responsible supervisor",
+            PresentResponsibleRole = "Area responsible",
+            OtherDeviations = NormalizeOptional(request.OtherDeviations),
             ObservedPreventiveBehaviors = NormalizeOptional(request.ObservedPreventiveBehaviors),
             ObservedUnsafeActs = NormalizeOptional(request.ObservedUnsafeActs),
             VerifiedUnsafeConditions = NormalizeOptional(request.VerifiedUnsafeConditions),
@@ -469,6 +478,7 @@ internal class DbStpInspectionService : IStpInspectionService
             ObservedPreventiveBehaviors = checklist.ObservedPreventiveBehaviors,
             ObservedUnsafeActs = checklist.ObservedUnsafeActs,
             VerifiedUnsafeConditions = checklist.VerifiedUnsafeConditions,
+            OtherDeviations = checklist.OtherDeviations,
             Items = checklist.Items
                 .OrderBy(x => x.Order)
                 .Select(x => new StpChecklistItemDto
@@ -476,7 +486,7 @@ internal class DbStpInspectionService : IStpInspectionService
                     Order = x.Order,
                     Description = x.Description,
                     Instruction = x.Instruction,
-                    Result = x.Result == MvcStpAreaChecklistResult.Check ? "Check" : "X",
+                    Result = ToResultCode(x.Result),
                     Notes = x.Notes
                 })
                 .ToList()
@@ -504,16 +514,35 @@ internal class DbStpInspectionService : IStpInspectionService
                 ? (checklist.InspectionArea.ResponsibleSupervisor.Name + " " + checklist.InspectionArea.ResponsibleSupervisor.LastName).Trim()
                 : checklist.PresentResponsibleName,
             TotalItems = checklist.Items.Count,
-            TotalCheck = checklist.Items.Count(x => x.Result == MvcStpAreaChecklistResult.Check),
-            TotalX = checklist.Items.Count(x => x.Result == MvcStpAreaChecklistResult.X)
+            TotalOk = checklist.Items.Count(x => x.Result == MvcStpAreaChecklistResult.Ok),
+            TotalNotOk = checklist.Items.Count(x => x.Result == MvcStpAreaChecklistResult.NotOk),
+            TotalNotApplicable = checklist.Items.Count(x => x.Result == MvcStpAreaChecklistResult.NotApplicable)
         };
     }
 
     private static MvcStpAreaChecklistResult ParseResult(string? value)
     {
-        return string.Equals(value, "X", StringComparison.OrdinalIgnoreCase)
-            ? MvcStpAreaChecklistResult.X
-            : MvcStpAreaChecklistResult.Check;
+        if (string.Equals(value, "NOK", StringComparison.OrdinalIgnoreCase))
+        {
+            return MvcStpAreaChecklistResult.NotOk;
+        }
+
+        if (string.Equals(value, "NA", StringComparison.OrdinalIgnoreCase))
+        {
+            return MvcStpAreaChecklistResult.NotApplicable;
+        }
+
+        return MvcStpAreaChecklistResult.Ok;
+    }
+
+    private static string ToResultCode(MvcStpAreaChecklistResult value)
+    {
+        return value switch
+        {
+            MvcStpAreaChecklistResult.NotOk => "NOK",
+            MvcStpAreaChecklistResult.NotApplicable => "NA",
+            _ => "OK"
+        };
     }
 
     private static string? NormalizeRequired(string? value)

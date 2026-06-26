@@ -9,7 +9,7 @@ public class MvcOperator
 
     [Required]
     public Guid SectorId { get; set; }
-
+    
     public MvcSector Sector { get; set; } = null!;
 
     [Required]
@@ -21,8 +21,19 @@ public class MvcOperator
     public string Name { get; set; } = string.Empty;
 
     [Required]
+    [MaxLength(100)]
+    public string LastName { get; set; } = string.Empty;
+
+    [Required]
     [MaxLength(60)]
     public string Login { get; set; } = string.Empty;
+
+    [MaxLength(150)]
+    [EmailAddress]
+    public string? Email { get; set; }
+
+    [MaxLength(20)]
+    public string? Extension { get; set; }
 
     [Required]
     [MaxLength(500)]

@@ -81,7 +81,7 @@ public static class InfrastructureServiceCollectionExtensions
             .AddCookie(MvcAuthenticationSchemes.Supervisor, options =>
             {
                 options.LoginPath = "/account/login";
-                options.AccessDeniedPath = "/account/login";
+                options.AccessDeniedPath = "/account/access-denied";
                 options.SlidingExpiration = true;
             })
             .AddCookie(MvcAuthenticationSchemes.Operator, options =>
@@ -104,11 +104,7 @@ public static class InfrastructureServiceCollectionExtensions
             services.AddSingleton<IActiveDirectoryCredentialValidator, UnsupportedPlatformCredentialValidator>();
         }
 
-        if (string.Equals(authenticationOptions.Mode, MvcAuthenticationOptions.DevelopmentStubMode, StringComparison.OrdinalIgnoreCase))
-        {
-            services.AddScoped<ISupervisorAuthenticationService, DevelopmentSupervisorAuthenticationService>();
-        }
-        else if (hasDatabaseConnection)
+        if (hasDatabaseConnection || useLocalInMemoryDatabase)
         {
             services.AddScoped<ISupervisorAuthenticationService, SupervisorAuthenticationService>();
         }
@@ -132,8 +128,6 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddAuthorization(options =>
         {
-            options.FallbackPolicy = options.DefaultPolicy;
-
             options.AddPolicy("SupervisorReady", policy =>
             {
                 policy.AuthenticationSchemes.Add(MvcAuthenticationSchemes.Supervisor);
@@ -220,6 +214,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<INonOkWorkflowService, DbNonOkWorkflowService>();
         services.AddScoped<IOperatorEquipmentReader, DbOperatorEquipmentReader>();
         services.AddScoped<IOperatorChecklistService, DbOperatorChecklistService>();
+        services.AddScoped<IStpInspectionService, DbStpInspectionService>();
+        services.AddScoped<IStpDocumentControlService, DbStpDocumentControlService>();
     }
 
     private static string? ResolveConnectionString(IConfiguration configuration, MvcDatabaseOptions databaseOptions)

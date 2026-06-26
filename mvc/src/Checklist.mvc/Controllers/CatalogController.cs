@@ -313,6 +313,9 @@ public class CatalogController : Controller
             }
 
             op.Name = form.Name.Trim();
+            op.LastName = form.LastName.Trim();
+            op.Email = NormalizeOptionalEmail(form.Email);
+            op.Extension = NormalizeOptionalText(form.Extension);
             op.Login = normalizedLogin;
             op.IsActive = form.IsActive;
             op.ForceChangePassword = form.ForceChangePassword;
@@ -330,10 +333,13 @@ public class CatalogController : Controller
                 SectorId = sectorId.Value,
                 Registration = registration,
                 Name = form.Name.Trim(),
+                LastName = form.LastName.Trim(),
+                Email = NormalizeOptionalEmail(form.Email),
+                Extension = NormalizeOptionalText(form.Extension),
                 Login = normalizedLogin,
                 PasswordHash = _passwordHashingService.HashPassword(form.Password!),
                 ForceChangePassword = form.ForceChangePassword,
-                IsActive = true
+                IsActive = form.IsActive
             });
         }
 
@@ -564,6 +570,9 @@ public class CatalogController : Controller
                     Id = current.Id,
                     Registration = current.Registration,
                     Name = current.Name,
+                    LastName = current.LastName,
+                    Email = current.Email,
+                    Extension = current.Extension,
                     Login = current.Login,
                     ForceChangePassword = current.ForceChangePassword,
                     IsActive = current.IsActive
@@ -580,6 +589,9 @@ public class CatalogController : Controller
                 Id = x.Id,
                 Registration = x.Registration,
                 Name = x.Name,
+                LastName = x.LastName,
+                Email = x.Email,
+                Extension = x.Extension,
                 Login = x.Login,
                 ForceChangePassword = x.ForceChangePassword,
                 IsActive = x.IsActive,
@@ -668,5 +680,10 @@ public class CatalogController : Controller
     private static string? NormalizeOptionalText(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string? NormalizeOptionalEmail(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim().ToLowerInvariant();
     }
 }

@@ -26,7 +26,7 @@ public class MvcStpAreaChecklistItem
     [MaxLength(2000)]
     public string? Instruction { get; set; }
 
-    public MvcStpAreaChecklistResult Result { get; set; } = MvcStpAreaChecklistResult.Check;
+    public MvcStpAreaChecklistResult Result { get; set; } = MvcStpAreaChecklistResult.Ok;
 
     [MaxLength(2000)]
     public string? Notes { get; set; }

@@ -124,7 +124,6 @@ public class MasterController : Controller
         if (form.Id.HasValue)
         {
             var user = await _dbContext.SupervisorUsers
-                .Include(x => x.Modules)
                 .FirstOrDefaultAsync(
                     x => x.Id == form.Id.Value && !x.IsMaster && x.UserType == MvcUserAccessType.Supervisor,
                     cancellationToken);
@@ -207,7 +206,6 @@ public class MasterController : Controller
         if (form.Id.HasValue)
         {
             var user = await _dbContext.SupervisorUsers
-                .Include(x => x.Modules)
                 .FirstOrDefaultAsync(
                     x => x.Id == form.Id.Value && !x.IsMaster && x.UserType == MvcUserAccessType.Inspector,
                     cancellationToken);
@@ -420,9 +418,10 @@ public class MasterController : Controller
             user.PasswordHash = _passwordHashingService.HashPassword(form.Password);
         }
 
-        _dbContext.SupervisorUserModules.RemoveRange(user.Modules);
-        user.Modules.Clear();
-        user.Modules.AddRange(BuildModules(user.Id, isInspector, form));
+        await _dbContext.SupervisorUserModules
+            .Where(x => x.SupervisorUserId == user.Id)
+            .ExecuteDeleteAsync(cancellationToken);
+        _dbContext.SupervisorUserModules.AddRange(BuildModules(user.Id, isInspector, form));
     }
 
     private static List<MvcSupervisorUserModule> BuildModules(Guid userId, bool isInspector, SupervisorManagementFormViewModel form)

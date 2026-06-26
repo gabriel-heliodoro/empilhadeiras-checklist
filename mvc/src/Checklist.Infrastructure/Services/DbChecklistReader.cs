@@ -47,7 +47,7 @@ public class DbChecklistReader : IChecklistReader
             Code = checklist.Equipment.Code,
             EquipmentCode = checklist.Equipment.Code,
             EquipmentDescription = checklist.Equipment.Description,
-            OperatorName = checklist.Operator.Name,
+            OperatorName = $"{checklist.Operator.Name} {checklist.Operator.LastName}".Trim(),
             SectorName = checklist.Sector.Name,
             Status = ToStatusLabel(checklist.Status, checklist.Items),
             CreatedAtUtc = checklist.CreatedAt,
@@ -110,7 +110,9 @@ public class DbChecklistReader : IChecklistReader
         {
             var operador = filters.Operator.Trim().ToLowerInvariant();
             query = query.Where(x =>
+                (x.Operator.Name + " " + x.Operator.LastName).ToLower().Contains(operador) ||
                 x.Operator.Name.ToLower().Contains(operador) ||
+                x.Operator.LastName.ToLower().Contains(operador) ||
                 x.Operator.Registration.Contains(filters.Operator));
         }
 
@@ -122,7 +124,7 @@ public class DbChecklistReader : IChecklistReader
                 SectorId = x.SectorId,
                 EquipmentCode = x.Equipment.Code,
                 EquipmentDescription = x.Equipment.Description,
-                OperatorName = x.Operator.Name,
+                OperatorName = (x.Operator.Name + " " + x.Operator.LastName).Trim(),
                 OperatorRegistration = x.Operator.Registration,
                 CreatedAt = x.CreatedAt,
                 Status = x.IsApproved ? "ok" : "nok",

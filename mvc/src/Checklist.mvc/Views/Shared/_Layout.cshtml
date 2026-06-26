@@ -24,6 +24,19 @@
     var isSafetyInspector =
         string.Equals(Context.User.FindFirst(CurrentUserClaimTypes.UserType)?.Value, "Inspector", StringComparison.Ordinal)
         && Context.User.FindAll(CurrentUserClaimTypes.AccessModule).Any(claim => string.Equals(claim.Value, AccessModuleCodes.WorkSafety, StringComparison.OrdinalIgnoreCase));
+    var homeController = "Home";
+    var homeAction = "Index";
+
+    if (isMaster)
+    {
+        homeController = "Master";
+        homeAction = "Sectors";
+    }
+    else if (isSafetyInspector)
+    {
+        homeController = "Stp";
+        homeAction = "Dashboard";
+    }
 
     string NavClass(string controller, string? action = null)
     {
@@ -60,7 +73,7 @@
             <div class="cf-topbar-shell">
                 <div class="cf-topbar">
                     <div class="cf-topbar-brand-zone">
-                        <a class="cf-brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="CheckFlow">
+                        <a class="cf-brand" asp-area="" asp-controller="@homeController" asp-action="@homeAction" aria-label="CheckFlow">
                             <img src="/assets/brand/Logo-Compacta.png" alt="CheckFlow" class="logo-compacta cf-brand-logo cf-brand-logo-desktop" />
                             <img src="/assets/brand/Logo-reduzida.png" alt="CheckFlow" class="logo-reduzida cf-brand-logo-mobile" />
                         </a>
@@ -81,30 +94,29 @@
                         <nav class="cf-nav" aria-label="Navegação principal">
                             @if (isAuthenticated)
                             {
-                                <a class="@NavClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index">Visão geral</a>
-                                <a class="@NavClass("Checklist")" asp-area="" asp-controller="Checklist" asp-action="Index">Checklists</a>
-                                <a class="@NavClass("NonOk")" asp-area="" asp-controller="NonOk" asp-action="Index">Itens não OK</a>
-                                @if (isSectorSupervisor)
-                                {
-                                    <a class="@NavClass("MonthlyClosure")" asp-controller="MonthlyClosure" asp-action="Index">Fechamentos</a>
-                                    <a class="@NavClass("Catalog", "Categories")" asp-controller="Catalog" asp-action="Categories">Categorias</a>
-                                    <a class="@NavClass("Catalog", "Templates")" asp-controller="Catalog" asp-action="Templates">Templates</a>
-                                    <a class="@NavClass("Catalog", "Operators")" asp-controller="Catalog" asp-action="Operators">Operadores</a>
-                                    <a class="@NavClass("Catalog", "Equipment")" asp-controller="Catalog" asp-action="Equipment">Equipamentos</a>
-                                }
                                 @if (isMaster)
                                 {
                                     <a class="@NavClass("Master", "Sectors")" asp-controller="Master" asp-action="Sectors">Setores</a>
                                     <a class="@NavClass("Master", "Supervisors")" asp-controller="Master" asp-action="Supervisors">Supervisores</a>
                                     <a class="@NavClass("Master", "Inspectors")" asp-controller="Master" asp-action="Inspectors">Inspetores</a>
                                 }
-                                @if (isSafetyInspector)
+                                else if (isSafetyInspector)
                                 {
                                     <a class="@NavClass("Stp", "Dashboard")" asp-controller="Stp" asp-action="Dashboard">STP</a>
                                     <a class="@NavClass("Stp", "Areas")" asp-controller="Stp" asp-action="Areas">Áreas</a>
-                                    <a class="@NavClass("Stp", "NewChecklist")" asp-controller="Stp" asp-action="NewChecklist">Nova STP</a>
                                     <a class="@NavClass("Stp", "Checklists")" asp-controller="Stp" asp-action="Checklists">Checklists STP</a>
                                     <a class="@NavClass("StpDocuments")" asp-controller="StpDocuments" asp-action="Index">Documentos STP</a>
+                                }
+                                else if (isSectorSupervisor)
+                                {
+                                    <a class="@NavClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index">Visão geral</a>
+                                    <a class="@NavClass("Checklist")" asp-area="" asp-controller="Checklist" asp-action="Index">Checklists</a>
+                                    <a class="@NavClass("NonOk")" asp-area="" asp-controller="NonOk" asp-action="Index">Itens não OK</a>
+                                    <a class="@NavClass("MonthlyClosure")" asp-controller="MonthlyClosure" asp-action="Index">Fechamentos</a>
+                                    <a class="@NavClass("Catalog", "Categories")" asp-controller="Catalog" asp-action="Categories">Categorias</a>
+                                    <a class="@NavClass("Catalog", "Templates")" asp-controller="Catalog" asp-action="Templates">Templates</a>
+                                    <a class="@NavClass("Catalog", "Operators")" asp-controller="Catalog" asp-action="Operators">Operadores</a>
+                                    <a class="@NavClass("Catalog", "Equipment")" asp-controller="Catalog" asp-action="Equipment">Equipamentos</a>
                                 }
                             }
                         </nav>

@@ -70,9 +70,9 @@ public class StpController : Controller
     }
 
     [HttpGet("stp/checklists/new")]
-    public async Task<IActionResult> NewChecklist([FromQuery] Guid? areaId, [FromQuery] Guid? templateId, CancellationToken cancellationToken)
+    public async Task<IActionResult> NewChecklist([FromQuery] Guid? areaId, CancellationToken cancellationToken)
     {
-        var result = await _inspectionService.GetChecklistDraftAsync(areaId, templateId, cancellationToken);
+        var result = await _inspectionService.GetChecklistDraftAsync(areaId, null, cancellationToken);
         if (!result.Success || result.Value is null)
         {
             TempData["StatusMessage"] = result.Error ?? "Nao foi possivel abrir o rascunho da inspecao STP.";
@@ -112,6 +112,7 @@ public class StpController : Controller
         {
             AreaId = model.AreaId!.Value,
             TemplateId = model.TemplateId!.Value,
+            OtherDeviations = model.OtherDeviations,
             ObservedPreventiveBehaviors = model.ObservedPreventiveBehaviors,
             ObservedUnsafeActs = model.ObservedUnsafeActs,
             VerifiedUnsafeConditions = model.VerifiedUnsafeConditions,
@@ -176,6 +177,7 @@ public class StpController : Controller
             ReferenceDate = result.Value.ReferenceDate,
             InspectorName = result.Value.InspectorName,
             ResponsibleName = result.Value.ResponsibleName,
+            OtherDeviations = result.Value.OtherDeviations,
             ObservedPreventiveBehaviors = result.Value.ObservedPreventiveBehaviors,
             ObservedUnsafeActs = result.Value.ObservedUnsafeActs,
             VerifiedUnsafeConditions = result.Value.VerifiedUnsafeConditions,
@@ -257,6 +259,7 @@ public class StpController : Controller
         draft.ObservedPreventiveBehaviors = model.ObservedPreventiveBehaviors;
         draft.ObservedUnsafeActs = model.ObservedUnsafeActs;
         draft.VerifiedUnsafeConditions = model.VerifiedUnsafeConditions;
+        draft.OtherDeviations = model.OtherDeviations;
         draft.Items = draft.Items.Select(item =>
         {
             if (postedItems.TryGetValue(item.TemplateItemId, out var posted))
@@ -297,7 +300,7 @@ public class StpController : Controller
                 Order = x.Order,
                 Description = x.Description,
                 Instruction = x.Instruction,
-                Result = "Check"
+                Result = string.Empty
             }).ToList() ?? []
         };
     }
@@ -315,8 +318,9 @@ public class StpController : Controller
             InspectionAreaName = item.InspectionAreaName,
             ResponsibleName = item.ResponsibleName,
             TotalItems = item.TotalItems,
-            TotalCheck = item.TotalCheck,
-            TotalX = item.TotalX
+            TotalOk = item.TotalOk,
+            TotalNotOk = item.TotalNotOk,
+            TotalNotApplicable = item.TotalNotApplicable
         };
     }
 }

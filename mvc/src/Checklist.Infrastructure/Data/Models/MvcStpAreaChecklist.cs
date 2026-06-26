@@ -38,6 +38,9 @@ public class MvcStpAreaChecklist
     public string? PresentResponsibleRole { get; set; }
 
     [MaxLength(4000)]
+    public string? OtherDeviations { get; set; }
+
+    [MaxLength(4000)]
     public string? ObservedPreventiveBehaviors { get; set; }
 
     [MaxLength(4000)]

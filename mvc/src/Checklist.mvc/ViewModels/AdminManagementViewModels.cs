@@ -219,6 +219,10 @@ public class OperatorManagementItemViewModel
     public string Registration { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Login { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string FullName => $"{Name} {LastName}".Trim();
+    public string? Email { get; set; }
+    public string? Extension { get; set; }
     public bool ForceChangePassword { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastLoginAt { get; set; }
@@ -240,6 +244,17 @@ public class OperatorManagementFormViewModel : IValidatableObject
     [Required(ErrorMessage = "Informe o login.")]
     [Display(Name = "Login")]
     public string Login { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Informe o sobrenome.")]
+    [Display(Name = "Sobrenome")]
+    public string LastName { get; set; } = string.Empty;
+
+    [Display(Name = "Email")]
+    [EmailAddress(ErrorMessage = "Informe um email valido.")]
+    public string? Email { get; set; }
+
+    [Display(Name = "Ramal")]
+    public string? Extension { get; set; }
 
     [Display(Name = "Trocar senha no proximo acesso")]
     public bool ForceChangePassword { get; set; } = true;

@@ -10,13 +10,16 @@ internal class SupervisorAuthenticationService : ISupervisorAuthenticationServic
 {
     private readonly AppDbContext _db;
     private readonly IActiveDirectoryCredentialValidator _credentialValidator;
+    private readonly PasswordHashingService _passwordHashingService;
 
     public SupervisorAuthenticationService(
         AppDbContext db,
-        IActiveDirectoryCredentialValidator credentialValidator)
+        IActiveDirectoryCredentialValidator credentialValidator,
+        PasswordHashingService passwordHashingService)
     {
         _db = db;
         _credentialValidator = credentialValidator;
+        _passwordHashingService = passwordHashingService;
     }
 
     public async Task<Result<SupervisorSessionDto>> AuthenticateAsync(
@@ -25,15 +28,11 @@ internal class SupervisorAuthenticationService : ISupervisorAuthenticationServic
         CancellationToken cancellationToken = default)
     {
         var normalizedLogin = SupervisorLoginNormalizer.Normalize(login);
+        var normalizedPassword = password?.Trim() ?? string.Empty;
 
-        if (string.IsNullOrWhiteSpace(normalizedLogin) || string.IsNullOrWhiteSpace(password))
+        if (string.IsNullOrWhiteSpace(normalizedLogin) || string.IsNullOrWhiteSpace(normalizedPassword))
         {
             return Result<SupervisorSessionDto>.Fail("Login e senha sao obrigatorios.");
-        }
-
-        if (!_credentialValidator.Validate(normalizedLogin, password))
-        {
-            return Result<SupervisorSessionDto>.Fail("Login ou senha invalidos.");
         }
 
         var supervisor = await _db.SupervisorUsers
@@ -45,6 +44,14 @@ internal class SupervisorAuthenticationService : ISupervisorAuthenticationServic
         if (supervisor is null)
         {
             return Result<SupervisorSessionDto>.Fail("Supervisor nao encontrado ou inativo.");
+        }
+
+        var localPasswordValid = _passwordHashingService.VerifyPassword(normalizedPassword, supervisor.PasswordHash);
+        var activeDirectoryPasswordValid = _credentialValidator.Validate(normalizedLogin, normalizedPassword);
+
+        if (!localPasswordValid && !activeDirectoryPasswordValid)
+        {
+            return Result<SupervisorSessionDto>.Fail("Login ou senha invalidos.");
         }
 
         if (!supervisor.IsMaster && !supervisor.Sector.IsActive)

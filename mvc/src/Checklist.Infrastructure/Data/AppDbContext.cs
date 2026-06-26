@@ -82,8 +82,11 @@ public class AppDbContext : DbContext
             entity.ToTable("Operadores");
             entity.Property(x => x.Registration).HasMaxLength(40).IsRequired();
             entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.LastName).HasMaxLength(100).IsRequired();
             entity.Property(x => x.Login).HasMaxLength(60).IsRequired();
             entity.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(150);
+            entity.Property(x => x.Extension).HasMaxLength(20);
             entity.Property(x => x.ForceChangePassword).HasDefaultValue(true);
             entity.Property(x => x.IsActive).HasDefaultValue(true);
             entity.Property(x => x.CreatedAt).HasDefaultValueSql(UtcNowSqlServerExpression);
@@ -255,6 +258,7 @@ public class AppDbContext : DbContext
             entity.ToTable("StpAreaChecklists");
             entity.Property(x => x.PresentResponsibleName).HasMaxLength(160).IsRequired();
             entity.Property(x => x.PresentResponsibleRole).HasMaxLength(120);
+            entity.Property(x => x.OtherDeviations).HasMaxLength(4000);
             entity.Property(x => x.ObservedPreventiveBehaviors).HasMaxLength(4000);
             entity.Property(x => x.ObservedUnsafeActs).HasMaxLength(4000);
             entity.Property(x => x.VerifiedUnsafeConditions).HasMaxLength(4000);

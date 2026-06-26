@@ -53,7 +53,14 @@
                                     <strong>@item.Order</strong><br />
                                     <span class="text-secondary">@item.Description</span>
                                 </td>
-                                <td><span class="cf-badge @(item.Result == "Check" ? "cf-badge-success" : "cf-badge-danger")">@item.Result</span></td>
+                                <td>
+                                    <span class="cf-badge @(item.Result switch
+                                    {
+                                        "OK" => "cf-badge-success",
+                                        "NOK" => "cf-badge-danger",
+                                        _ => "cf-badge-neutral"
+                                    })">@item.Result</span>
+                                </td>
                                 <td>@item.Notes</td>
                             </tr>
                         }
@@ -64,6 +71,10 @@
         <div class="cf-document-section pt-0">
             <h3 class="cf-section-title">Observacoes gerais</h3>
             <div class="cf-detail-grid">
+                <div class="cf-surface cf-surface-padded">
+                    <div class="cf-detail-label">Outros desvios</div>
+                    <p class="cf-naook-detail-copy">@Model.OtherDeviations</p>
+                </div>
                 <div class="cf-surface cf-surface-padded">
                     <div class="cf-detail-label">Comportamentos preventivos</div>
                     <p class="cf-naook-detail-copy">@Model.ObservedPreventiveBehaviors</p>

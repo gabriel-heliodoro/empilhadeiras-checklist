@@ -83,7 +83,7 @@ internal class DbOperatorChecklistService : IOperatorChecklistService
             {
                 Id = operatorData.Id,
                 SectorId = operatorData.SectorId,
-                Name = operatorData.Name,
+                Name = $"{operatorData.Name} {operatorData.LastName}".Trim(),
                 Registration = operatorData.Registration,
                 Login = operatorData.Login,
                 SectorName = operatorData.Sector.Name,
@@ -264,7 +264,7 @@ internal class DbOperatorChecklistService : IOperatorChecklistService
             EquipmentId = checklist.EquipmentId,
             EquipmentCode = equipment.Code,
             OperatorId = operatorData.Id,
-            OperatorName = operatorData.Name,
+            OperatorName = $"{operatorData.Name} {operatorData.LastName}".Trim(),
             CompletedAtUtc = checklist.CompletedAt,
             IsApproved = checklist.IsApproved,
             Status = checklist.Status.ToString()

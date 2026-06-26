@@ -18,10 +18,10 @@ public class SupervisorLoginGenerator
         Guid? excludeSupervisorId = null,
         CancellationToken cancellationToken = default)
     {
-        var baseLogin = SupervisorLoginNormalizer.Normalize($"{name}{lastName}");
+        var baseLogin = $"{NormalizeLoginPart(name)}{NormalizeLoginPart(lastName)}";
         if (string.IsNullOrWhiteSpace(baseLogin))
         {
-            baseLogin = "supervisor";
+            baseLogin = "Supervisor";
         }
 
         var candidate = baseLogin;
@@ -36,5 +36,18 @@ public class SupervisorLoginGenerator
         }
 
         return candidate;
+    }
+
+    private static string NormalizeLoginPart(string value)
+    {
+        var normalized = SupervisorLoginNormalizer.Normalize(value);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        return normalized.Length == 1
+            ? normalized.ToUpperInvariant()
+            : char.ToUpperInvariant(normalized[0]) + normalized[1..];
     }
 }

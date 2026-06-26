@@ -27,6 +27,6 @@ public static class SupervisorLoginNormalizer
         }
 
         var withoutAccents = builder.ToString().Normalize(NormalizationForm.FormC);
-        return NonAlphaNumericRegex.Replace(withoutAccents, string.Empty).Trim().ToLowerInvariant();
+        return NonAlphaNumericRegex.Replace(withoutAccents, string.Empty).Trim();
     }
 }

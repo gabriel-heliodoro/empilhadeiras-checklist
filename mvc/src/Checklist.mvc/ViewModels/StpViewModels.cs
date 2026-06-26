@@ -74,8 +74,9 @@ public class StpChecklistListItemViewModel
     public string InspectionAreaName { get; set; } = string.Empty;
     public string ResponsibleName { get; set; } = string.Empty;
     public int TotalItems { get; set; }
-    public int TotalCheck { get; set; }
-    public int TotalX { get; set; }
+    public int TotalOk { get; set; }
+    public int TotalNotOk { get; set; }
+    public int TotalNotApplicable { get; set; }
 }
 
 public class StpChecklistDetailsViewModel
@@ -88,6 +89,8 @@ public class StpChecklistDetailsViewModel
     public DateTime ReferenceDate { get; set; }
     public string InspectorName { get; set; } = string.Empty;
     public string ResponsibleName { get; set; } = string.Empty;
+
+    public string? OtherDeviations { get; set; }
     public string? ObservedPreventiveBehaviors { get; set; }
     public string? ObservedUnsafeActs { get; set; }
     public string? VerifiedUnsafeConditions { get; set; }
@@ -112,6 +115,9 @@ public class StpChecklistEditorPageViewModel
     public string? TemplateCode { get; set; }
     public string? TemplateName { get; set; }
 
+    [Display(Name = "Outros desvios")]
+    public string? OtherDeviations { get; set; }
+
     [Display(Name = "Comportamentos preventivos observados")]
     public string? ObservedPreventiveBehaviors { get; set; }
 
@@ -134,7 +140,7 @@ public class StpChecklistEditorItemViewModel
     public string? Instruction { get; set; }
 
     [Required(ErrorMessage = "Selecione o resultado do item.")]
-    public string Result { get; set; } = "Check";
+    public string Result { get; set; } = string.Empty;
 
     public string? Notes { get; set; }
 }

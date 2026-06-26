@@ -65,7 +65,9 @@ internal static class NonOkReadModel
         {
             var operador = filters.Operator.Trim().ToLower();
             query = query.Where(item =>
+                (item.Checklist.Operator.Name + " " + item.Checklist.Operator.LastName).ToLower().Contains(operador) ||
                 item.Checklist.Operator.Name.ToLower().Contains(operador) ||
+                item.Checklist.Operator.LastName.ToLower().Contains(operador) ||
                 item.Checklist.Operator.Registration.Contains(filters.Operator));
         }
 
@@ -89,7 +91,9 @@ internal static class NonOkReadModel
             SourceSectorName = item.Checklist.Sector?.Name ?? "Sector nao informado",
             EquipmentCode = item.Checklist.Equipment?.Code ?? "Equipment nao informado",
             EquipmentDescription = item.Checklist.Equipment?.Description ?? "Description nao informada",
-            OperatorName = item.Checklist.Operator?.Name ?? "Operator nao informado",
+            OperatorName = item.Checklist.Operator is null
+                ? "Operator nao informado"
+                : $"{item.Checklist.Operator.Name} {item.Checklist.Operator.LastName}".Trim(),
             OperatorRegistration = item.Checklist.Operator?.Registration ?? "-",
             Order = item.Order,
             Description = item.Description,

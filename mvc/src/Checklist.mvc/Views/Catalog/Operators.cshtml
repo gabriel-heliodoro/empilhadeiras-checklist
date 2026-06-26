@@ -37,6 +37,23 @@
                         <span asp-validation-for="Form.Name" class="text-danger"></span>
                     </div>
                     <div>
+                        <label asp-for="Form.LastName" class="cf-field-label"></label>
+                        <input asp-for="Form.LastName" />
+                        <span asp-validation-for="Form.LastName" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="cf-filter-grid">
+                    <div>
+                        <label asp-for="Form.Email" class="cf-field-label"></label>
+                        <input asp-for="Form.Email" />
+                        <span asp-validation-for="Form.Email" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.Extension" class="cf-field-label"></label>
+                        <input asp-for="Form.Extension" />
+                        <span asp-validation-for="Form.Extension" class="text-danger"></span>
+                    </div>
+                    <div>
                         <label asp-for="Form.Login" class="cf-field-label"></label>
                         <input asp-for="Form.Login" />
                         <span asp-validation-for="Form.Login" class="text-danger"></span>
@@ -110,8 +127,15 @@
                                 <tr class="cf-data-row">
                                     <td><strong>@item.Registration</strong></td>
                                     <td>
-                                        <strong>@item.Name</strong><br />
-                                        <span class="text-secondary">Criado em @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                                        <strong>@item.FullName</strong><br />
+                                        <span class="text-secondary">
+                                            @(string.IsNullOrWhiteSpace(item.Email) ? "Sem email" : item.Email)
+                                            @if (!string.IsNullOrWhiteSpace(item.Extension))
+                                            {
+                                                <text> · Ramal @item.Extension</text>
+                                            }
+                                            <text> · Criado em @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</text>
+                                        </span>
                                     </td>
                                     <td><span class="cf-management-pill">@item.Login</span></td>
                                     <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>

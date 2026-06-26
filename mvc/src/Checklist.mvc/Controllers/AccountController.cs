@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Checklist.Mvc.Controllers;
 
+[Route("account")]
 public class AccountController : Controller
 {
     private readonly ISupervisorAuthenticationService _authenticationService;
@@ -19,13 +20,13 @@ public class AccountController : Controller
         _authenticationService = authenticationService;
     }
 
-    [HttpGet]
+    [HttpGet("login")]
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
     {
         if (User.Identity?.IsAuthenticated == true)
         {
-            return RedirectToLocal(returnUrl);
+            return RedirectToLocal(returnUrl, BuildLandingContext(User));
         }
 
         return View(new LoginViewModel
@@ -34,7 +35,7 @@ public class AccountController : Controller
         });
     }
 
-    [HttpPost]
+    [HttpPost("login")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken cancellationToken)
@@ -65,11 +66,18 @@ public class AccountController : Controller
                 AllowRefresh = true
             });
 
-        return RedirectToLocal(model.ReturnUrl);
+        return RedirectToLocal(model.ReturnUrl, BuildLandingContext(supervisor));
+    }
+
+    [HttpGet("access-denied")]
+    [AllowAnonymous]
+    public IActionResult AccessDenied()
+    {
+        return View();
     }
 
     [Authorize]
-    [HttpPost]
+    [HttpPost("logout")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
@@ -77,14 +85,55 @@ public class AccountController : Controller
         return RedirectToAction(nameof(Login));
     }
 
-    private IActionResult RedirectToLocal(string? returnUrl)
+    private IActionResult RedirectToLocal(string? returnUrl, LandingContext context)
     {
-        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        if (!string.IsNullOrWhiteSpace(returnUrl)
+            && Url.IsLocalUrl(returnUrl)
+            && !IsLoopingLoginReturnUrl(returnUrl)
+            && !(context.ShouldIgnoreRootReturnUrl && string.Equals(returnUrl, "/", StringComparison.Ordinal)))
         {
             return Redirect(returnUrl);
         }
 
-        return RedirectToAction("Index", "Home");
+        if (context.IsMaster)
+        {
+            return RedirectToAction("Sectors", "Master");
+        }
+
+        if (string.Equals(context.UserType, "Supervisor", StringComparison.Ordinal)
+            && context.ModuleCodes.Contains(AccessModuleCodes.OperationalSupervision, StringComparer.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        if (string.Equals(context.UserType, "Inspector", StringComparison.Ordinal)
+            && context.ModuleCodes.Contains(AccessModuleCodes.WorkSafety, StringComparer.OrdinalIgnoreCase))
+        {
+            return RedirectToAction("Dashboard", "Stp");
+        }
+
+        return RedirectToAction(nameof(AccessDenied));
+    }
+
+    private static bool IsLoopingLoginReturnUrl(string returnUrl)
+    {
+        return returnUrl.StartsWith("/account/login", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static LandingContext BuildLandingContext(ClaimsPrincipal user)
+    {
+        return new LandingContext(
+            bool.TryParse(user.FindFirst(CurrentUserClaimTypes.IsMaster)?.Value, out var isMaster) && isMaster,
+            user.FindFirst(CurrentUserClaimTypes.UserType)?.Value ?? string.Empty,
+            user.FindAll(CurrentUserClaimTypes.AccessModule).Select(x => x.Value).ToArray());
+    }
+
+    private static LandingContext BuildLandingContext(SupervisorSessionDto supervisor)
+    {
+        return new LandingContext(
+            supervisor.IsMaster,
+            supervisor.UserType,
+            supervisor.ModuleCodes.ToArray());
     }
 
     private static IReadOnlyCollection<Claim> BuildClaims(SupervisorSessionDto supervisor)
@@ -106,5 +155,14 @@ public class AccountController : Controller
         }
 
         return claims;
+    }
+
+    private sealed record LandingContext(
+        bool IsMaster,
+        string UserType,
+        IReadOnlyCollection<string> ModuleCodes)
+    {
+        public bool ShouldIgnoreRootReturnUrl =>
+            IsMaster || string.Equals(UserType, "Inspector", StringComparison.Ordinal);
     }
 }

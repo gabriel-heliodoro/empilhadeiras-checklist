@@ -11,7 +11,6 @@
         </div>
         <div class="cf-management-actions">
             <span class="cf-summary-chip">@Model.Items.Count registros</span>
-            <a asp-action="NewChecklist" class="btn btn-primary">Nova inspecao</a>
         </div>
     </div>
 
@@ -48,8 +47,9 @@
                         <th>Inspetor</th>
                         <th>Responsavel</th>
                         <th>Data</th>
-                        <th>Check</th>
-                        <th>X</th>
+                        <th>OK</th>
+                        <th>NOK</th>
+                        <th>NA</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -62,8 +62,9 @@
                             <td>@item.InspectorName</td>
                             <td>@item.ResponsibleName</td>
                             <td>@item.CompletedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>@item.TotalCheck</td>
-                            <td>@item.TotalX</td>
+                            <td>@item.TotalOk</td>
+                            <td>@item.TotalNotOk</td>
+                            <td>@item.TotalNotApplicable</td>
                             <td class="text-end"><a asp-action="Details" asp-route-id="@item.Id" class="cf-link">Detalhes</a></td>
                         </tr>
                     }

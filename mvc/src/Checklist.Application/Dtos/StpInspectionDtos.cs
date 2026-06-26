@@ -72,6 +72,7 @@ public class StpChecklistSubmissionDto
 {
     public Guid AreaId { get; init; }
     public Guid TemplateId { get; init; }
+    public string? OtherDeviations { get; init; }
     public string? ObservedPreventiveBehaviors { get; init; }
     public string? ObservedUnsafeActs { get; init; }
     public string? VerifiedUnsafeConditions { get; init; }
@@ -112,8 +113,9 @@ public class StpChecklistListItemDto
     public string InspectionAreaName { get; init; } = string.Empty;
     public string ResponsibleName { get; init; } = string.Empty;
     public int TotalItems { get; init; }
-    public int TotalCheck { get; init; }
-    public int TotalX { get; init; }
+    public int TotalOk { get; init; }
+    public int TotalNotOk { get; init; }
+    public int TotalNotApplicable { get; init; }
 }
 
 public class StpChecklistDetailsDto
@@ -126,6 +128,7 @@ public class StpChecklistDetailsDto
     public DateTime ReferenceDate { get; init; }
     public string InspectorName { get; init; } = string.Empty;
     public string ResponsibleName { get; init; } = string.Empty;
+    public string? OtherDeviations { get; init; }
     public string? ObservedPreventiveBehaviors { get; init; }
     public string? ObservedUnsafeActs { get; init; }
     public string? VerifiedUnsafeConditions { get; init; }

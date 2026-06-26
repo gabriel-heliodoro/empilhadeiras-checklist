@@ -102,7 +102,7 @@ internal class OperatorAuthenticationService : IOperatorAuthenticationService
         {
             Id = operador.Id,
             SectorId = operador.SectorId,
-            Name = operador.Name,
+            Name = $"{operador.Name} {operador.LastName}".Trim(),
             Registration = operador.Registration,
             Login = operador.Login,
             SectorName = operador.Sector.Name,

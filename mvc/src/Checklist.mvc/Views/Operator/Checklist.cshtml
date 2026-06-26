@@ -96,10 +96,7 @@
 
                                 <div class="cf-user-menu-footer">
                                     <span class="cf-user-chip">@Model.OperatorRegistration</span>
-                                    <form asp-controller="OperatorAccount" asp-action="Logout" method="post" class="mb-0">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="cf-button cf-button-secondary">Trocar operador</button>
-                                    </form>
+                                    <button type="submit" form="operator-logout-form" class="cf-button cf-button-secondary">Trocar operador</button>
                                 </div>
                             </div>
                         </div>
@@ -145,7 +142,7 @@
                             <label class="cf-field-label cf-checklist-hero-label">Operator autenticado</label>
                             <div class="cf-mobile-input cf-checklist-hero-input selected cf-operator-readonly">
                                 <strong>@Model.OperatorName</strong>
-                                <span>@Model.OperatorRegistration · @Model.SectorName</span>
+                                <span>@Model.OperatorRegistration Â· @Model.SectorName</span>
                             </div>
                         </div>
                     </section>
@@ -270,6 +267,10 @@
                     </div>
                 </section>
             </section>
+        </form>
+
+        <form id="operator-logout-form" asp-controller="OperatorAccount" asp-action="Logout" method="post" class="d-none">
+            @Html.AntiForgeryToken()
         </form>
     </div>
 

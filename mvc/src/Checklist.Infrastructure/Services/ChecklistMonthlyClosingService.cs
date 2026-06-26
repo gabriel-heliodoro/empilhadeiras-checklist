@@ -255,7 +255,7 @@ public class ChecklistMonthlyClosingService
         foreach (var checklist in selected)
         {
             var day = checklist.ReferenceDate.Day;
-            var operatorDisplay = $"{checklist.Operator.Registration} - {checklist.Operator.Name}";
+            var operatorDisplay = $"{checklist.Operator.Registration} - {checklist.Operator.Name} {checklist.Operator.LastName}".Trim();
 
             if (!string.IsNullOrWhiteSpace(checklist.GeneralNotes))
             {
@@ -270,7 +270,7 @@ public class ChecklistMonthlyClosingService
         }
 
         var operators = selected
-            .Select(x => $"{x.Operator.Name} / {x.Operator.Registration}")
+            .Select(x => $"{x.Operator.Name} {x.Operator.LastName} / {x.Operator.Registration}".Trim())
             .Distinct()
             .OrderBy(x => x)
             .ToList();
@@ -294,7 +294,7 @@ public class ChecklistMonthlyClosingService
             {
                 Day = x.ReferenceDate.Day,
                 ChecklistId = x.Id,
-                OperatorName = x.Operator.Name,
+                OperatorName = $"{x.Operator.Name} {x.Operator.LastName}".Trim(),
                 OperatorRegistration = x.Operator.Registration,
                 CompletedAt = x.CompletedAt
             }).ToList(),
