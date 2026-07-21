@@ -64,31 +64,28 @@ ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowD
 
 ### Autenticacao
 
-Secao usada pelo projeto:
+Supervisor, inspetor e operador autenticam sempre via Active Directory, exceto a conta
+`IsMaster` (admin de bootstrap), que usa senha local. Dominio e OU do AD sao fixos em
+`Checklist.Infrastructure/Services/ActiveDirectoryService.cs` (nao vem de `appsettings`).
 
 ```json
 {
   "Authentication": {
     "Mode": "DevelopmentStub"
-  },
-  "ActiveDirectory": {
-    "Domain": "",
-    "Container": ""
   }
 }
 ```
 
-Modos suportados:
+`Authentication:Mode` hoje so controla se o `LocalMvcDatabaseBootstrapper` semeia um
+supervisor/operador de desenvolvimento no banco local (`DevelopmentStub`) — nao afeta mais
+a validacao de login, que sempre bate no AD real.
 
-- `DevelopmentStub`: supervisor e operador de desenvolvimento
-- `ActiveDirectory`: login administrativo validado no AD; exige execucao em Windows
+### Credenciais locais
 
-### Credenciais locais padrao
-
-Em `Development`, o projeto sobe com stub local:
-
-- supervisor: `supervisor.teste` / `123456`
-- operador: `GabrielCandido` / `123456`
+- conta master (bootstrap, senha local): configurada via `MasterController` apos o primeiro
+  supervisor `IsMaster` existir no banco.
+- supervisor, inspetor e operador: login precisa corresponder a uma conta valida no AD
+  configurado em `ActiveDirectoryService`.
 
 ## Execucao local
 

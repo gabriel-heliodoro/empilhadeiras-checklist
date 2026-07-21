@@ -26,6 +26,7 @@
             <h2 class="cf-section-title">@(isEditing ? "Editar inspetor" : "Novo inspetor")</h2>
             <form asp-action="SaveInspector" method="post" class="cf-management-form">
                 @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="cf-form-error"></div>
                 <input asp-for="Form.Id" type="hidden" />
                 <div class="cf-filter-grid">
                     <div>
@@ -60,18 +61,6 @@
                     <input asp-for="Form.Email" />
                     <span asp-validation-for="Form.Email" class="text-danger"></span>
                 </div>
-                <div class="cf-filter-grid">
-                    <div>
-                        <label asp-for="Form.Password" class="cf-field-label"></label>
-                        <input asp-for="Form.Password" />
-                        <span asp-validation-for="Form.Password" class="text-danger"></span>
-                    </div>
-                    <div>
-                        <label asp-for="Form.ConfirmPassword" class="cf-field-label"></label>
-                        <input asp-for="Form.ConfirmPassword" />
-                        <span asp-validation-for="Form.ConfirmPassword" class="text-danger"></span>
-                    </div>
-                </div>
                 <div class="cf-management-checkboxes">
                     <label class="cf-checkbox">
                         <input asp-for="Form.WorkSafetyModule" type="checkbox" />
@@ -80,10 +69,6 @@
                     <label class="cf-checkbox">
                         <input asp-for="Form.MaterialInspectionModule" type="checkbox" />
                         <span>Modulo de inspecao de materiais.</span>
-                    </label>
-                    <label class="cf-checkbox">
-                        <input asp-for="Form.ForceChangePassword" type="checkbox" />
-                        <span>Forcar troca de senha no proximo acesso.</span>
                     </label>
                     <label class="cf-checkbox">
                         <input asp-for="Form.IsActive" type="checkbox" />

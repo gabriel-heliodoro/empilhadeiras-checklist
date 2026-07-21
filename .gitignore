@@ -19,6 +19,7 @@ artifacts/
 .vscode/
 .vs/
 .idea/
+.claude/
 *.suo
 *.user
 *.userosscache

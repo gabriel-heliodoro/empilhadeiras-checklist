@@ -60,56 +60,8 @@ public class OperatorAccountController : Controller
         return RedirectAfterLogin(model.ReturnUrl);
     }
 
-    [Authorize(Policy = "OperatorAuthenticated")]
-    [HttpGet("primeiro-acesso")]
-    public IActionResult FirstAccess()
-    {
-        if (!_currentOperator.ForceChangePassword)
-        {
-            return RedirectToAction("Index", "Operator");
-        }
-
-        return View(new OperatorFirstAccessViewModel
-        {
-            OperatorName = _currentOperator.Name ?? string.Empty,
-            OperatorRegistration = _currentOperator.Registration ?? string.Empty
-        });
-    }
-
-    [Authorize(Policy = "OperatorAuthenticated")]
-    [HttpPost("primeiro-acesso")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> FirstAccess(OperatorFirstAccessViewModel model, CancellationToken cancellationToken)
-    {
-        model.OperatorName = _currentOperator.Name ?? string.Empty;
-        model.OperatorRegistration = _currentOperator.Registration ?? string.Empty;
-
-        if (!_currentOperator.Id.HasValue)
-        {
-            return RedirectToAction(nameof(Login));
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return View(model);
-        }
-
-        var result = await _authenticationService.ChangePasswordAsync(
-            _currentOperator.Id.Value,
-            model.NewPassword,
-            model.ConfirmPassword,
-            cancellationToken);
-
-        if (!result.Success || result.Value is null)
-        {
-            ModelState.AddModelError(string.Empty, result.Error ?? "Nao foi possivel atualizar a senha do operador.");
-            return View(model);
-        }
-
-        await SignInOperatorAsync(result.Value);
-        TempData["OperatorSuccessMessage"] = "Senha atualizada. O checklist operacional ja pode ser iniciado.";
-        return RedirectToAction("Index", "Operator");
-    }
+    // Fluxo de "primeiro acesso" (troca de senha local) removido: operador autentica via
+    // Active Directory e a senha e gerenciada la, nao mais por este app.
 
     [Authorize(Policy = "OperatorAuthenticated")]
     [HttpPost("logout")]
@@ -125,11 +77,6 @@ public class OperatorAccountController : Controller
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
             return Redirect(returnUrl);
-        }
-
-        if (_currentOperator.ForceChangePassword)
-        {
-            return RedirectToAction(nameof(FirstAccess));
         }
 
         return RedirectToAction("Index", "Operator");

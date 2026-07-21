@@ -61,7 +61,6 @@ public class SupervisorManagementItemViewModel
     public string Login { get; set; } = string.Empty;
     public string? Email { get; set; }
     public string? Extension { get; set; }
-    public bool ForceChangePassword { get; set; }
     public bool IsActive { get; set; }
     public Guid SectorId { get; set; }
     public string SectorName { get; set; } = string.Empty;
@@ -69,7 +68,7 @@ public class SupervisorManagementItemViewModel
     public IReadOnlyList<string> ModuleCodes { get; set; } = [];
 }
 
-public class SupervisorManagementFormViewModel : IValidatableObject
+public class SupervisorManagementFormViewModel
 {
     public Guid? Id { get; set; }
 
@@ -92,46 +91,14 @@ public class SupervisorManagementFormViewModel : IValidatableObject
     [Display(Name = "Ramal")]
     public string? Extension { get; set; }
 
-    [Display(Name = "Trocar senha no proximo acesso")]
-    public bool ForceChangePassword { get; set; } = true;
-
     [Display(Name = "Ativo")]
     public bool IsActive { get; set; } = true;
-
-    [Display(Name = "Senha")]
-    [DataType(DataType.Password)]
-    public string? Password { get; set; }
-
-    [Display(Name = "Confirmar senha")]
-    [DataType(DataType.Password)]
-    public string? ConfirmPassword { get; set; }
 
     [Display(Name = "Seguranca do trabalho")]
     public bool WorkSafetyModule { get; set; }
 
     [Display(Name = "Inspecao de materiais")]
     public bool MaterialInspectionModule { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (!Id.HasValue && string.IsNullOrWhiteSpace(Password))
-        {
-            yield return new ValidationResult("Informe a senha.", [nameof(Password)]);
-        }
-
-        if (!string.IsNullOrWhiteSpace(Password) || !string.IsNullOrWhiteSpace(ConfirmPassword))
-        {
-            if (Password != ConfirmPassword)
-            {
-                yield return new ValidationResult("Senha e confirmacao precisam ser iguais.", [nameof(ConfirmPassword)]);
-            }
-
-            if ((Password ?? string.Empty).Length < 8)
-            {
-                yield return new ValidationResult("A senha precisa ter pelo menos 8 caracteres.", [nameof(Password)]);
-            }
-        }
-    }
 }
 
 public class CategoryManagementPageViewModel
@@ -223,13 +190,12 @@ public class OperatorManagementItemViewModel
     public string FullName => $"{Name} {LastName}".Trim();
     public string? Email { get; set; }
     public string? Extension { get; set; }
-    public bool ForceChangePassword { get; set; }
     public bool IsActive { get; set; }
     public DateTime? LastLoginAt { get; set; }
     public DateTime CreatedAt { get; set; }
 }
 
-public class OperatorManagementFormViewModel : IValidatableObject
+public class OperatorManagementFormViewModel
 {
     public Guid? Id { get; set; }
 
@@ -256,40 +222,67 @@ public class OperatorManagementFormViewModel : IValidatableObject
     [Display(Name = "Ramal")]
     public string? Extension { get; set; }
 
-    [Display(Name = "Trocar senha no proximo acesso")]
-    public bool ForceChangePassword { get; set; } = true;
+    [Display(Name = "Ativo")]
+    public bool IsActive { get; set; } = true;
+}
+
+public class MasterOperatorManagementPageViewModel
+{
+    public List<MasterOperatorManagementItemViewModel> Items { get; set; } = [];
+    public MasterOperatorManagementFormViewModel Form { get; set; } = new();
+    public List<ManagementOptionViewModel> SectorOptions { get; set; } = [];
+}
+
+public class MasterOperatorManagementItemViewModel
+{
+    public Guid Id { get; set; }
+    public string Registration { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string FullName => $"{Name} {LastName}".Trim();
+    public string Login { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? Extension { get; set; }
+    public bool IsActive { get; set; }
+    public Guid SectorId { get; set; }
+    public string SectorName { get; set; } = string.Empty;
+    public DateTime? LastLoginAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class MasterOperatorManagementFormViewModel
+{
+    public Guid? Id { get; set; }
+
+    [Required(ErrorMessage = "Informe a matricula.")]
+    [Display(Name = "Matricula")]
+    public string Registration { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Informe o nome.")]
+    [Display(Name = "Nome")]
+    public string Name { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Informe o sobrenome.")]
+    [Display(Name = "Sobrenome")]
+    public string LastName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Informe o login.")]
+    [Display(Name = "Login")]
+    public string Login { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Selecione o setor.")]
+    [Display(Name = "Setor")]
+    public Guid SectorId { get; set; }
+
+    [Display(Name = "Email")]
+    [EmailAddress(ErrorMessage = "Informe um email valido.")]
+    public string? Email { get; set; }
+
+    [Display(Name = "Ramal")]
+    public string? Extension { get; set; }
 
     [Display(Name = "Ativo")]
     public bool IsActive { get; set; } = true;
-
-    [Display(Name = "Senha")]
-    [DataType(DataType.Password)]
-    public string? Password { get; set; }
-
-    [Display(Name = "Confirmar senha")]
-    [DataType(DataType.Password)]
-    public string? ConfirmPassword { get; set; }
-
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-    {
-        if (!Id.HasValue && string.IsNullOrWhiteSpace(Password))
-        {
-            yield return new ValidationResult("Informe a senha.", [nameof(Password)]);
-        }
-
-        if (!string.IsNullOrWhiteSpace(Password) || !string.IsNullOrWhiteSpace(ConfirmPassword))
-        {
-            if (Password != ConfirmPassword)
-            {
-                yield return new ValidationResult("Senha e confirmacao precisam ser iguais.", [nameof(ConfirmPassword)]);
-            }
-
-            if ((Password ?? string.Empty).Length < 8)
-            {
-                yield return new ValidationResult("A senha precisa ter pelo menos 8 caracteres.", [nameof(Password)]);
-            }
-        }
-    }
 }
 
 public class EquipmentManagementPageViewModel

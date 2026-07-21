@@ -2,6 +2,7 @@ using Checklist.Application.Common;
 using Checklist.Application.Dtos;
 using Checklist.Application.Interfaces;
 using Checklist.Infrastructure.Data;
+using Checklist.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Checklist.Infrastructure.Identity;
@@ -9,16 +10,13 @@ namespace Checklist.Infrastructure.Identity;
 internal class SupervisorAuthenticationService : ISupervisorAuthenticationService
 {
     private readonly AppDbContext _db;
-    private readonly IActiveDirectoryCredentialValidator _credentialValidator;
     private readonly PasswordHashingService _passwordHashingService;
 
     public SupervisorAuthenticationService(
         AppDbContext db,
-        IActiveDirectoryCredentialValidator credentialValidator,
         PasswordHashingService passwordHashingService)
     {
         _db = db;
-        _credentialValidator = credentialValidator;
         _passwordHashingService = passwordHashingService;
     }
 
@@ -45,11 +43,12 @@ internal class SupervisorAuthenticationService : ISupervisorAuthenticationServic
         {
             return Result<SupervisorSessionDto>.Fail("Supervisor nao encontrado ou inativo.");
         }
+        
+        var passwordValid = supervisor.IsMaster
+            ? _passwordHashingService.VerifyPassword(normalizedPassword, supervisor.PasswordHash)
+            : ActiveDirectoryService.AuthenticateAD(normalizedLogin, normalizedPassword);
 
-        var localPasswordValid = _passwordHashingService.VerifyPassword(normalizedPassword, supervisor.PasswordHash);
-        var activeDirectoryPasswordValid = _credentialValidator.Validate(normalizedLogin, normalizedPassword);
-
-        if (!localPasswordValid && !activeDirectoryPasswordValid)
+        if (!passwordValid)
         {
             return Result<SupervisorSessionDto>.Fail("Login ou senha invalidos.");
         }

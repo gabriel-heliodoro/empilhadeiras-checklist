@@ -15,20 +15,17 @@ namespace Checklist.Mvc.Controllers;
 public class MasterController : Controller
 {
     private readonly AppDbContext _dbContext;
-    private readonly PasswordHashingService _passwordHashingService;
     private readonly SupervisorLoginGenerator _supervisorLoginGenerator;
     private readonly ChecklistStandardCatalogService _checklistStandardCatalogService;
     private readonly StpAreaTemplateCatalogService _stpAreaTemplateCatalogService;
 
     public MasterController(
         AppDbContext dbContext,
-        PasswordHashingService passwordHashingService,
         SupervisorLoginGenerator supervisorLoginGenerator,
         ChecklistStandardCatalogService checklistStandardCatalogService,
         StpAreaTemplateCatalogService stpAreaTemplateCatalogService)
     {
         _dbContext = dbContext;
-        _passwordHashingService = passwordHashingService;
         _supervisorLoginGenerator = supervisorLoginGenerator;
         _checklistStandardCatalogService = checklistStandardCatalogService;
         _stpAreaTemplateCatalogService = stpAreaTemplateCatalogService;
@@ -146,8 +143,6 @@ public class MasterController : Controller
                 Login = await _supervisorLoginGenerator.GenerateUniqueLoginAsync(form.Name.Trim(), form.LastName.Trim(), null, cancellationToken),
                 Email = NormalizeOptionalEmail(form.Email),
                 Extension = NormalizeOptionalText(form.Extension),
-                PasswordHash = _passwordHashingService.HashPassword(form.Password!),
-                ForceChangePassword = form.ForceChangePassword,
                 IsMaster = false,
                 UserType = MvcUserAccessType.Supervisor,
                 SectorId = form.SectorId,
@@ -228,8 +223,6 @@ public class MasterController : Controller
                 Login = await _supervisorLoginGenerator.GenerateUniqueLoginAsync(form.Name.Trim(), form.LastName.Trim(), null, cancellationToken),
                 Email = NormalizeOptionalEmail(form.Email),
                 Extension = NormalizeOptionalText(form.Extension),
-                PasswordHash = _passwordHashingService.HashPassword(form.Password!),
-                ForceChangePassword = form.ForceChangePassword,
                 IsMaster = false,
                 UserType = MvcUserAccessType.Inspector,
                 SectorId = form.SectorId,
@@ -255,6 +248,91 @@ public class MasterController : Controller
 
         TempData["StatusType"] = "success";
         return RedirectToAction(nameof(Inspectors), new { editId = form.Id });
+    }
+
+    [HttpGet("master/operators")]
+    public async Task<IActionResult> Operators([FromQuery] Guid? editId, CancellationToken cancellationToken)
+    {
+        var model = await BuildMasterOperatorPageViewModelAsync(new MasterOperatorManagementFormViewModel(), editId, cancellationToken);
+        return View(model);
+    }
+
+    [HttpPost("master/operators")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveOperator(MasterOperatorManagementFormViewModel form, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View("Operators", await BuildMasterOperatorPageViewModelAsync(form, form.Id, cancellationToken));
+        }
+
+        if (!await _dbContext.Sectors.AnyAsync(x => x.Id == form.SectorId && x.IsActive, cancellationToken))
+        {
+            ModelState.AddModelError(nameof(form.SectorId), "Setor invalido ou inativo.");
+            return View("Operators", await BuildMasterOperatorPageViewModelAsync(form, form.Id, cancellationToken));
+        }
+
+        var registration = (form.Registration ?? string.Empty).Trim();
+        var normalizedLogin = OperatorLoginNormalizer.Normalize(form.Login);
+
+        if (await _dbContext.Operators.AnyAsync(
+                x => x.SectorId == form.SectorId
+                    && x.Registration == registration
+                    && (!form.Id.HasValue || x.Id != form.Id.Value),
+                cancellationToken))
+        {
+            ModelState.AddModelError(nameof(form.Registration), "Ja existe operador com esta matricula neste setor.");
+            return View("Operators", await BuildMasterOperatorPageViewModelAsync(form, form.Id, cancellationToken));
+        }
+
+        if (await _dbContext.Operators.AnyAsync(
+                x => x.Login == normalizedLogin && (!form.Id.HasValue || x.Id != form.Id.Value),
+                cancellationToken))
+        {
+            ModelState.AddModelError(nameof(form.Login), "Ja existe operador com este login.");
+            return View("Operators", await BuildMasterOperatorPageViewModelAsync(form, form.Id, cancellationToken));
+        }
+
+        if (form.Id.HasValue)
+        {
+            var op = await _dbContext.Operators.FirstOrDefaultAsync(x => x.Id == form.Id.Value, cancellationToken);
+            if (op is null)
+            {
+                return NotFound();
+            }
+
+            op.Name = form.Name.Trim();
+            op.LastName = form.LastName.Trim();
+            op.Email = NormalizeOptionalEmail(form.Email);
+            op.Extension = NormalizeOptionalText(form.Extension);
+            op.Login = normalizedLogin;
+            op.SectorId = form.SectorId;
+            op.IsActive = form.IsActive;
+
+            TempData["StatusMessage"] = "Operador atualizado.";
+        }
+        else
+        {
+            var op = new MvcOperator
+            {
+                SectorId = form.SectorId,
+                Registration = registration,
+                Name = form.Name.Trim(),
+                LastName = form.LastName.Trim(),
+                Email = NormalizeOptionalEmail(form.Email),
+                Extension = NormalizeOptionalText(form.Extension),
+                Login = normalizedLogin,
+                IsActive = form.IsActive
+            };
+
+            _dbContext.Operators.Add(op);
+            TempData["StatusMessage"] = "Operador criado.";
+            form.Id = op.Id;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        TempData["StatusType"] = "success";
+        return RedirectToAction(nameof(Operators), new { editId = form.Id });
     }
 
     private async Task<SectorManagementPageViewModel> BuildSectorPageViewModelAsync(
@@ -303,6 +381,66 @@ public class MasterController : Controller
         };
     }
 
+    private async Task<MasterOperatorManagementPageViewModel> BuildMasterOperatorPageViewModelAsync(
+        MasterOperatorManagementFormViewModel form,
+        Guid? editId,
+        CancellationToken cancellationToken)
+    {
+        if (editId.HasValue && form.Id is null)
+        {
+            var current = await _dbContext.Operators
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == editId.Value, cancellationToken);
+
+            if (current is not null)
+            {
+                form = new MasterOperatorManagementFormViewModel
+                {
+                    Id = current.Id,
+                    Registration = current.Registration,
+                    Name = current.Name,
+                    LastName = current.LastName,
+                    Login = current.Login,
+                    SectorId = current.SectorId,
+                    Email = current.Email,
+                    Extension = current.Extension,
+                    IsActive = current.IsActive
+                };
+            }
+        }
+
+        var items = await _dbContext.Operators
+            .AsNoTracking()
+            .Include(x => x.Sector)
+            .OrderBy(x => x.Sector.Name)
+            .ThenBy(x => x.Registration)
+            .Select(x => new MasterOperatorManagementItemViewModel
+            {
+                Id = x.Id,
+                Registration = x.Registration,
+                Name = x.Name,
+                LastName = x.LastName,
+                Login = x.Login,
+                Email = x.Email,
+                Extension = x.Extension,
+                IsActive = x.IsActive,
+                SectorId = x.SectorId,
+                SectorName = x.Sector.Name,
+                LastLoginAt = x.LastLoginAt,
+                CreatedAt = x.CreatedAt
+            })
+            .ToListAsync(cancellationToken);
+
+        var sectors = await GetSectorOptionsAsync(cancellationToken);
+
+        return new MasterOperatorManagementPageViewModel
+        {
+            Form = form,
+            Items = items,
+            SectorOptions = sectors
+        };
+    }
+
     private async Task<SupervisorManagementPageViewModel> BuildSupervisorPageViewModelAsync(
         bool isInspector,
         SupervisorManagementFormViewModel form,
@@ -328,7 +466,6 @@ public class MasterController : Controller
                     SectorId = current.SectorId,
                     Email = current.Email,
                     Extension = current.Extension,
-                    ForceChangePassword = current.ForceChangePassword,
                     IsActive = current.IsActive,
                     WorkSafetyModule = current.Modules.Any(x => x.Module == MvcAccessModule.WorkSafety),
                     MaterialInspectionModule = current.Modules.Any(x => x.Module == MvcAccessModule.MaterialInspection)
@@ -365,7 +502,6 @@ public class MasterController : Controller
                 Login = user.Login,
                 Email = user.Email,
                 Extension = user.Extension,
-                ForceChangePassword = user.ForceChangePassword,
                 IsActive = user.IsActive,
                 SectorId = user.SectorId,
                 SectorName = user.Sector.Name,
@@ -408,15 +544,9 @@ public class MasterController : Controller
         user.Login = await _supervisorLoginGenerator.GenerateUniqueLoginAsync(user.Name, user.LastName, user.Id, cancellationToken);
         user.Email = NormalizeOptionalEmail(form.Email);
         user.Extension = NormalizeOptionalText(form.Extension);
-        user.ForceChangePassword = form.ForceChangePassword;
         user.SectorId = form.SectorId;
         user.IsActive = form.IsActive;
         user.UserType = isInspector ? MvcUserAccessType.Inspector : MvcUserAccessType.Supervisor;
-
-        if (!string.IsNullOrWhiteSpace(form.Password))
-        {
-            user.PasswordHash = _passwordHashingService.HashPassword(form.Password);
-        }
 
         await _dbContext.SupervisorUserModules
             .Where(x => x.SupervisorUserId == user.Id)

@@ -24,33 +24,12 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Restore backend
-        run: dotnet restore empilhadeiras-checklist.sln
+      - name: Restore
+        run: dotnet restore Checklist.Mvc.slnx
 
-      - name: Build backend
-        run: dotnet build backend/Checklist.Api/Checklist.Api.csproj --no-restore --configuration Release
+      - name: Build
+        run: dotnet build Checklist.Mvc.slnx --no-restore --configuration Release
 
-      - name: Run backend tests
-        run: dotnet test backend/Checklist.Api.Tests/Checklist.Api.Tests.csproj --no-restore --configuration Release
-
-  frontend:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/checklist-web/package-lock.json
-
-      - name: Install frontend dependencies
-        run: npm ci
-        working-directory: frontend/checklist-web
-
-      - name: Build frontend
-        run: npm run build
-        working-directory: frontend/checklist-web
+      # Reativar quando existir um projeto de teste de verdade (xUnit) no repo, ex:
+      # - name: Run tests
+      #   run: dotnet test Checklist.Mvc.slnx --no-restore --configuration Release

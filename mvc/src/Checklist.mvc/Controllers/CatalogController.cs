@@ -15,16 +15,13 @@ public class CatalogController : Controller
 {
     private readonly AppDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
-    private readonly PasswordHashingService _passwordHashingService;
 
     public CatalogController(
         AppDbContext dbContext,
-        ICurrentUser currentUser,
-        PasswordHashingService passwordHashingService)
+        ICurrentUser currentUser)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
-        _passwordHashingService = passwordHashingService;
     }
 
     [HttpGet("catalog/categories")]
@@ -318,13 +315,6 @@ public class CatalogController : Controller
             op.Extension = NormalizeOptionalText(form.Extension);
             op.Login = normalizedLogin;
             op.IsActive = form.IsActive;
-            op.ForceChangePassword = form.ForceChangePassword;
-
-            if (!string.IsNullOrWhiteSpace(form.Password))
-            {
-                op.PasswordHash = _passwordHashingService.HashPassword(form.Password);
-                op.ForceChangePassword = true;
-            }
         }
         else
         {
@@ -337,8 +327,6 @@ public class CatalogController : Controller
                 Email = NormalizeOptionalEmail(form.Email),
                 Extension = NormalizeOptionalText(form.Extension),
                 Login = normalizedLogin,
-                PasswordHash = _passwordHashingService.HashPassword(form.Password!),
-                ForceChangePassword = form.ForceChangePassword,
                 IsActive = form.IsActive
             });
         }
@@ -574,7 +562,6 @@ public class CatalogController : Controller
                     Email = current.Email,
                     Extension = current.Extension,
                     Login = current.Login,
-                    ForceChangePassword = current.ForceChangePassword,
                     IsActive = current.IsActive
                 };
             }
@@ -593,7 +580,6 @@ public class CatalogController : Controller
                 Email = x.Email,
                 Extension = x.Extension,
                 Login = x.Login,
-                ForceChangePassword = x.ForceChangePassword,
                 IsActive = x.IsActive,
                 LastLoginAt = x.LastLoginAt,
                 CreatedAt = x.CreatedAt

@@ -1,4 +1,4 @@
-@model Checklist.Mvc.ViewModels.OperatorManagementPageViewModel
+@model Checklist.Mvc.ViewModels.MasterOperatorManagementPageViewModel
 @{
     ViewData["Title"] = "Operadores";
     var isEditing = Model.Form.Id.HasValue;
@@ -8,6 +8,7 @@
     <div class="cf-page-header">
         <div>
             <h1 class="cf-page-title">Operadores</h1>
+            <p class="cf-page-subtitle">Gestao global de operadores, de todos os setores.</p>
         </div>
         <div class="cf-toolbar-summary">
             <span class="cf-summary-chip">@Model.Items.Count operadores</span>
@@ -41,6 +42,17 @@
                         <label asp-for="Form.LastName" class="cf-field-label"></label>
                         <input asp-for="Form.LastName" />
                         <span asp-validation-for="Form.LastName" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Form.SectorId" class="cf-field-label"></label>
+                        <select asp-for="Form.SectorId" class="form-select">
+                            <option value="">Selecione</option>
+                            @foreach (var option in Model.SectorOptions)
+                            {
+                                <option value="@option.Id">@option.Label</option>
+                            }
+                        </select>
+                        <span asp-validation-for="Form.SectorId" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="cf-filter-grid">
@@ -80,7 +92,7 @@
             <div class="cf-table-toolbar">
                 <div class="cf-table-titleblock">
                     <h2 class="cf-section-title mb-0">Operadores cadastrados</h2>
-                    <span class="cf-page-subtitle">Login normalizado em minusculo, com rastreio de criacao e ultimo acesso.</span>
+                    <span class="cf-page-subtitle">Login precisa corresponder a uma conta valida no Active Directory.</span>
                 </div>
             </div>
             <div class="cf-table-wrap">
@@ -89,6 +101,7 @@
                         <tr>
                             <th>Matricula</th>
                             <th>Nome</th>
+                            <th>Setor</th>
                             <th>Login</th>
                             <th>Status</th>
                             <th>Ultimo acesso</th>
@@ -99,8 +112,8 @@
                         @if (Model.Items.Count == 0)
                         {
                             <tr>
-                                <td colspan="6">
-                                    <div class="cf-empty">Nenhum operador cadastrado para este setor.</div>
+                                <td colspan="7">
+                                    <div class="cf-empty">Nenhum operador cadastrado.</div>
                                 </td>
                             </tr>
                         }
@@ -118,9 +131,9 @@
                                             {
                                                 <text> · Ramal @item.Extension</text>
                                             }
-                                            <text> · Criado em @item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</text>
                                         </span>
                                     </td>
+                                    <td>@item.SectorName</td>
                                     <td><span class="cf-management-pill">@item.Login</span></td>
                                     <td><span class="cf-badge @(item.IsActive ? "cf-badge-success" : "cf-badge-gray")">@(item.IsActive ? "Ativo" : "Inativo")</span></td>
                                     <td>@(item.LastLoginAt.HasValue ? item.LastLoginAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm") : "Nunca acessou")</td>

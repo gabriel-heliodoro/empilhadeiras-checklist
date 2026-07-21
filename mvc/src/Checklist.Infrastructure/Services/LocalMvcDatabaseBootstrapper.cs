@@ -13,22 +13,34 @@ public class LocalMvcDatabaseBootstrapper
     private readonly AppDbContext _dbContext;
     private readonly PasswordHashingService _passwordHashingService;
     private readonly MvcAuthenticationOptions _authenticationOptions;
+    private readonly MasterAccountOptions _masterAccountOptions;
 
     public LocalMvcDatabaseBootstrapper(
         AppDbContext dbContext,
         PasswordHashingService passwordHashingService,
-        IOptions<MvcAuthenticationOptions> authenticationOptions)
+        IOptions<MvcAuthenticationOptions> authenticationOptions,
+        IOptions<MasterAccountOptions> masterAccountOptions)
     {
         _dbContext = dbContext;
         _passwordHashingService = passwordHashingService;
         _authenticationOptions = authenticationOptions.Value;
+        _masterAccountOptions = masterAccountOptions.Value;
     }
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        await _dbContext.Database.EnsureCreatedAsync(cancellationToken);
-        await EnsureOperatorExtendedColumnsAsync(cancellationToken);
-        await EnsureStpChecklistExtendedColumnsAsync(cancellationToken);
+        
+        if (_dbContext.Database.IsSqlServer())
+        {
+            await _dbContext.Database.MigrateAsync(cancellationToken);
+        }
+        else
+        {
+            await _dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        }
+
+        
+        await EnsureMasterAccountAsync(cancellationToken);
 
         if (!Guid.TryParse(_authenticationOptions.DevelopmentSectorId, out var supervisorSectorId))
         {
@@ -60,7 +72,8 @@ public class LocalMvcDatabaseBootstrapper
             await EnsureDevelopmentSupervisorAsync(supervisorUserId, supervisorSectorId, cancellationToken);
         }
 
-        if (Guid.TryParse(_authenticationOptions.DevelopmentOperatorId, out var operatorId))
+        if (string.Equals(_authenticationOptions.Mode, MvcAuthenticationOptions.DevelopmentStubMode, StringComparison.OrdinalIgnoreCase)
+            && Guid.TryParse(_authenticationOptions.DevelopmentOperatorId, out var operatorId))
         {
             await EnsureOperatorAsync(operatorId, operatorSectorId, cancellationToken);
         }
@@ -93,6 +106,57 @@ public class LocalMvcDatabaseBootstrapper
             sector.IsActive = true;
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
+    }
+
+    private async Task EnsureMasterAccountAsync(CancellationToken cancellationToken)
+    {
+        var login = SupervisorLoginNormalizer.Normalize(_masterAccountOptions.Login ?? string.Empty);
+        var password = (_masterAccountOptions.Password ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(login) || string.IsNullOrWhiteSpace(password))
+        {
+            return;
+        }
+
+        var masterExists = await _dbContext.SupervisorUsers.AnyAsync(x => x.IsMaster, cancellationToken);
+        if (masterExists)
+        {
+            return;
+        }
+
+        var sectorName = string.IsNullOrWhiteSpace(_masterAccountOptions.SectorName)
+            ? "Administracao"
+            : _masterAccountOptions.SectorName.Trim();
+
+        var sector = await _dbContext.Sectors.FirstOrDefaultAsync(x => x.Name == sectorName, cancellationToken);
+        if (sector is null)
+        {
+            sector = new MvcSector
+            {
+                Name = sectorName,
+                Description = "Setor administrativo da conta master de bootstrap.",
+                IsActive = true
+            };
+
+            _dbContext.Sectors.Add(sector);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        var master = new MvcSupervisorUser
+        {
+            Name = string.IsNullOrWhiteSpace(_masterAccountOptions.Name) ? "Admin" : _masterAccountOptions.Name.Trim(),
+            LastName = string.IsNullOrWhiteSpace(_masterAccountOptions.LastName) ? "Master" : _masterAccountOptions.LastName.Trim(),
+            Login = login,
+            PasswordHash = _passwordHashingService.HashPassword(password),
+            ForceChangePassword = false,
+            IsMaster = true,
+            UserType = MvcUserAccessType.Supervisor,
+            SectorId = sector.Id,
+            IsActive = true
+        };
+
+        _dbContext.SupervisorUsers.Add(master);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private async Task EnsureOperatorAsync(Guid operatorId, Guid sectorId, CancellationToken cancellationToken)
@@ -212,50 +276,6 @@ public class LocalMvcDatabaseBootstrapper
         }));
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-    }
-
-    private async Task EnsureOperatorExtendedColumnsAsync(CancellationToken cancellationToken)
-    {
-        if (!_dbContext.Database.IsSqlServer())
-        {
-            return;
-        }
-
-        const string sql = """
-            IF COL_LENGTH('Operadores', 'LastName') IS NULL
-            BEGIN
-                ALTER TABLE [Operadores] ADD [LastName] nvarchar(100) NOT NULL CONSTRAINT [DF_Operadores_LastName] DEFAULT N'';
-            END;
-
-            IF COL_LENGTH('Operadores', 'Email') IS NULL
-            BEGIN
-                ALTER TABLE [Operadores] ADD [Email] nvarchar(150) NULL;
-            END;
-
-            IF COL_LENGTH('Operadores', 'Extension') IS NULL
-            BEGIN
-                ALTER TABLE [Operadores] ADD [Extension] nvarchar(20) NULL;
-            END;
-            """;
-
-        await _dbContext.Database.ExecuteSqlRawAsync(sql, cancellationToken);
-    }
-
-    private async Task EnsureStpChecklistExtendedColumnsAsync(CancellationToken cancellationToken)
-    {
-        if (!_dbContext.Database.IsSqlServer())
-        {
-            return;
-        }
-
-        const string sql = """
-            IF COL_LENGTH('StpAreaChecklists', 'OtherDeviations') IS NULL
-            BEGIN
-                ALTER TABLE [StpAreaChecklists] ADD [OtherDeviations] nvarchar(4000) NULL;
-            END;
-            """;
-
-        await _dbContext.Database.ExecuteSqlRawAsync(sql, cancellationToken);
     }
 
     private static (string FirstName, string LastName) SplitOperatorName(string fullName)

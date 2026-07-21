@@ -19,21 +19,16 @@ public static class InfrastructureServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        var authenticationOptions =
-            configuration.GetSection(MvcAuthenticationOptions.SectionName).Get<MvcAuthenticationOptions>()
-            ?? new MvcAuthenticationOptions();
-
         var databaseOptions =
             configuration.GetSection(MvcDatabaseOptions.SectionName).Get<MvcDatabaseOptions>()
             ?? new MvcDatabaseOptions();
 
         var connectionString = ResolveConnectionString(configuration, databaseOptions);
         var hasDatabaseConnection = !string.IsNullOrWhiteSpace(connectionString);
-        var useLocalInMemoryDatabase = !hasDatabaseConnection;
 
         services.Configure<MvcAuthenticationOptions>(configuration.GetSection(MvcAuthenticationOptions.SectionName));
-        services.Configure<ActiveDirectoryOptions>(configuration.GetSection(ActiveDirectoryOptions.SectionName));
         services.Configure<MvcDatabaseOptions>(configuration.GetSection(MvcDatabaseOptions.SectionName));
+        services.Configure<MasterAccountOptions>(configuration.GetSection(MasterAccountOptions.SectionName));
         services.AddHttpContextAccessor();
 
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
@@ -91,40 +86,9 @@ public static class InfrastructureServiceCollectionExtensions
                 options.SlidingExpiration = true;
             });
 
-        if (string.Equals(authenticationOptions.Mode, MvcAuthenticationOptions.DevelopmentStubMode, StringComparison.OrdinalIgnoreCase))
-        {
-            services.AddSingleton<IActiveDirectoryCredentialValidator, DevelopmentStubCredentialValidator>();
-        }
-        else if (OperatingSystem.IsWindows())
-        {
-            services.AddSingleton<IActiveDirectoryCredentialValidator, ActiveDirectoryCredentialValidator>();
-        }
-        else
-        {
-            services.AddSingleton<IActiveDirectoryCredentialValidator, UnsupportedPlatformCredentialValidator>();
-        }
-
-        if (hasDatabaseConnection || useLocalInMemoryDatabase)
-        {
-            services.AddScoped<ISupervisorAuthenticationService, SupervisorAuthenticationService>();
-        }
-        else
-        {
-            services.AddScoped<ISupervisorAuthenticationService, UnavailableSupervisorAuthenticationService>();
-        }
-
-        if (string.Equals(authenticationOptions.Mode, MvcAuthenticationOptions.DevelopmentStubMode, StringComparison.OrdinalIgnoreCase))
-        {
-            services.AddScoped<IOperatorAuthenticationService, OperatorAuthenticationService>();
-        }
-        else if (hasDatabaseConnection || useLocalInMemoryDatabase)
-        {
-            services.AddScoped<IOperatorAuthenticationService, OperatorAuthenticationService>();
-        }
-        else
-        {
-            services.AddScoped<IOperatorAuthenticationService, InMemoryOperatorAuthenticationService>();
-        }
+        
+        services.AddScoped<ISupervisorAuthenticationService, SupervisorAuthenticationService>();
+        services.AddScoped<IOperatorAuthenticationService, OperatorAuthenticationService>();
 
         services.AddAuthorization(options =>
         {

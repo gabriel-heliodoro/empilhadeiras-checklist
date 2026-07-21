@@ -128,7 +128,9 @@ ASPNETCORE_URLS=http://0.0.0.0:8080
 ## Observacoes operacionais
 
 - Nao existe endpoint `/health` dedicado na linha MVC atual.
-- O bootstrap local usa `EnsureCreatedAsync` quando o schema ainda nao existe.
+- O schema em SQL Server e criado/atualizado via EF Migrations (`Database.MigrateAsync`, ver
+  `mvc/src/Checklist.Infrastructure/Migrations`) no startup do app. `EnsureCreatedAsync` so e
+  usado no fallback InMemory (sem connection string configurada), que nao suporta migrations.
 - O projeto nao depende mais de Docker Compose para o fluxo local.
 
 ## Referencias

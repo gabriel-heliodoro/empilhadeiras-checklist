@@ -133,12 +133,24 @@
                         </div>
                     </div>
 
-                    <form method="get" asp-action="Index" class="cf-mobile-field-stack">
+                    <form method="get" asp-action="Index" class="cf-mobile-field-stack" id="operatorSearchForm">
                         <div>
                             <label class="cf-field-label" for="q">Codigo ou QR ID</label>
                             <div class="cf-mobile-input-shell">
                                 <input id="q" name="q" value="@Model.Query" placeholder="Ex.: EMP-061 ou GUID do QR" class="cf-mobile-input" />
                             </div>
+                        </div>
+
+                        <button type="button" class="cf-button cf-button-secondary cf-mobile-submit" id="qrScanButton">
+                            Ler QR Code pela camera
+                        </button>
+
+                        <div id="qrScannerPanel" class="cf-qr-scanner" hidden>
+                            <div id="qrReader" class="cf-qr-scanner-viewport"></div>
+                            <p id="qrScannerError" class="cf-qr-scanner-error" hidden></p>
+                            <button type="button" class="cf-button cf-button-secondary cf-mobile-submit" id="qrScanCancel">
+                                Cancelar leitura
+                            </button>
                         </div>
 
                         <button type="submit" class="cf-mobile-submit">Buscar equipamento</button>
@@ -171,5 +183,87 @@
     </div>
 
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/html5-qrcode/html5-qrcode.min.js"></script>
+    <script>
+        (function () {
+            var scanButton = document.getElementById("qrScanButton");
+            var cancelButton = document.getElementById("qrScanCancel");
+            var panel = document.getElementById("qrScannerPanel");
+            var errorText = document.getElementById("qrScannerError");
+            var input = document.getElementById("q");
+            var form = document.getElementById("operatorSearchForm");
+            var html5QrCode = null;
+            var guidPattern = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
+
+            if (!scanButton || !panel || !input || !form || typeof Html5Qrcode === "undefined") {
+                return;
+            }
+
+            function showError(message) {
+                errorText.textContent = message;
+                errorText.hidden = false;
+            }
+
+            function hideError() {
+                errorText.hidden = true;
+                errorText.textContent = "";
+            }
+
+            function stopScanner() {
+                if (!html5QrCode) {
+                    return Promise.resolve();
+                }
+                var instance = html5QrCode;
+                html5QrCode = null;
+                return instance.stop().then(function () {
+                    instance.clear();
+                }).catch(function () {
+                });
+            }
+
+            function closePanel() {
+                stopScanner().then(function () {
+                    panel.hidden = true;
+                });
+            }
+
+            function onScanSuccess(decodedText) {
+                var match = decodedText.match(guidPattern);
+                input.value = match ? match[0] : decodedText.trim();
+                hideError();
+                stopScanner().then(function () {
+                    panel.hidden = true;
+                    form.submit();
+                });
+            }
+
+            function onScanFailure() {
+            }
+
+            scanButton.addEventListener("click", function () {
+                hideError();
+                panel.hidden = false;
+                html5QrCode = new Html5Qrcode("qrReader");
+                html5QrCode.start(
+                    { facingMode: "environment" },
+                    { fps: 10, qrbox: { width: 250, height: 250 } },
+                    onScanSuccess,
+                    onScanFailure
+                ).catch(function () {
+                    showError("Nao foi possivel acessar a camera. Verifique a permissao do navegador.");
+                });
+            });
+
+            cancelButton.addEventListener("click", function () {
+                closePanel();
+            });
+
+            window.addEventListener("beforeunload", function () {
+                if (html5QrCode) {
+                    html5QrCode.stop().catch(function () {});
+                }
+            });
+        })();
+    </script>
 </body>
 </html>
