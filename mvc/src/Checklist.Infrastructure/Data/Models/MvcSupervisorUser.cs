@@ -30,7 +30,7 @@ public class MvcSupervisorUser
     [MaxLength(500)]
     public string PasswordHash { get; set; } = string.Empty;
 
-    public bool ForceChangePassword { get; set; } = true;
+    public bool ForceChangePassword { get; set; } = false;
     public bool IsMaster { get; set; } = false;
     public MvcUserAccessType UserType { get; set; } = MvcUserAccessType.Supervisor;
 

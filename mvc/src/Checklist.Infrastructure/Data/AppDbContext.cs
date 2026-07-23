@@ -1,9 +1,11 @@
 using Checklist.Infrastructure.Data.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Checklist.Infrastructure.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>
 {
     private const string UtcNowSqlServerExpression = "SYSUTCDATETIME()";
     private const string LargeTextColumnType = "nvarchar(max)";

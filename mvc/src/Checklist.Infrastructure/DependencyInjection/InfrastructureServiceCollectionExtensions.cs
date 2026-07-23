@@ -7,6 +7,7 @@ using Checklist.Infrastructure.Options;
 using Checklist.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,13 +27,10 @@ public static class InfrastructureServiceCollectionExtensions
         var connectionString = ResolveConnectionString(configuration, databaseOptions);
         var hasDatabaseConnection = !string.IsNullOrWhiteSpace(connectionString);
 
-        services.Configure<MvcAuthenticationOptions>(configuration.GetSection(MvcAuthenticationOptions.SectionName));
         services.Configure<MvcDatabaseOptions>(configuration.GetSection(MvcDatabaseOptions.SectionName));
-        services.Configure<MasterAccountOptions>(configuration.GetSection(MasterAccountOptions.SectionName));
         services.AddHttpContextAccessor();
 
         services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
-        services.AddSingleton<PasswordHashingService>();
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<ICurrentOperator, CurrentOperator>();
         services.AddScoped<SupervisorLoginGenerator>();
@@ -56,6 +54,10 @@ public static class InfrastructureServiceCollectionExtensions
             services.AddScoped<IStpInspectionService, UnavailableStpInspectionService>();
             services.AddScoped<IStpDocumentControlService, UnavailableStpDocumentControlService>();
         }
+
+        services.AddIdentityCore<IdentityUser<Guid>>()
+            .AddRoles<IdentityRole<Guid>>()
+            .AddEntityFrameworkStores<AppDbContext>();
 
         services.AddAuthentication(options =>
             {

@@ -17,7 +17,7 @@ Checklist.Application
 Checklist.Infrastructure
   |
   v
-SQL Server
+SQL Server + Active Directory
 ```
 
 ## Componentes
@@ -26,7 +26,6 @@ SQL Server
 
 - ASP.NET Core MVC em `mvc/src/Checklist.Mvc`
 - renderizacao server-side com controllers e Razor Views
-- autenticacao por cookie
 - rotas administrativas, operacionais e STP no mesmo processo
 
 ### Camada de aplicacao
@@ -37,76 +36,69 @@ SQL Server
 ### Infraestrutura
 
 - EF Core + SQL Server em `mvc/src/Checklist.Infrastructure`
-- `AppDbContext`
+- `AppDbContext` (herda de `IdentityDbContext<IdentityUser<Guid>, IdentityRole<Guid>, Guid>`)
 - servicos de autenticacao e persistencia
-- integracao com Active Directory para supervisor quando o host e Windows
+- integracao com Active Directory obrigatoria para supervisor, inspetor e operador
 
 ### Banco de dados
 
 - SQL Server para persistencia principal
-- banco em memoria apenas como fallback local sem conexao configurada
+- banco em memoria apenas como fallback local sem conexao configurada (nao suporta migrations)
 
-## Modos de deploy
+## Autenticacao
 
-### 1. Execucao local ou na rede interna com SQL Server existente
+Todo login de Supervisor, Inspetor e Operador e validado direto no Active Directory via
+`ActiveDirectoryService.AuthenticateAD` (`System.DirectoryServices.AccountManagement`).
 
-Esse e o modo recomendado para o seu cenario atual.
+### Usuario Master
 
-Requisitos:
+Depois que o schema estiver migrado, criar o master rodando este script no banco de producao
+(trocando `SEU_LOGIN_AD` pelo login do administrador):
 
-- host Windows
-- acesso ao SQL Server local ou corporativo
-- `ConnectionStrings__Default` configurada
-- `Authentication__Mode=ActiveDirectory` quando quiser validar supervisor no AD real
+```sql
+DECLARE @Login nvarchar(256) = N'LoginAdministrativo';
+DECLARE @UserId uniqueidentifier = NEWID();
+DECLARE @RoleId uniqueidentifier = NEWID();
 
-Exemplo:
+INSERT INTO AspNetRoles (Id, Name, NormalizedName, ConcurrencyStamp)
+VALUES (@RoleId, N'Master', N'MASTER', CONVERT(nvarchar(max), NEWID()));
 
-```env
-ASPNETCORE_ENVIRONMENT=Production
-ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;
-Authentication__Mode=ActiveDirectory
-ActiveDirectory__Domain=""""
-ActiveDirectory__Container=""
+INSERT INTO AspNetUsers (
+    Id, UserName, NormalizedUserName, Email, NormalizedEmail,
+    EmailConfirmed, PasswordHash, SecurityStamp, ConcurrencyStamp,
+    PhoneNumber, PhoneNumberConfirmed, TwoFactorEnabled,
+    LockoutEnd, LockoutEnabled, AccessFailedCount
+)
+VALUES (
+    @UserId, @Login, UPPER(@Login), NULL, NULL,
+    0, NULL, CONVERT(nvarchar(max), NEWID()), CONVERT(nvarchar(max), NEWID()),
+    NULL, 0, 0,
+    NULL, 0, 0
+);
+
+INSERT INTO AspNetUserRoles (UserId, RoleId)
+VALUES (@UserId, @RoleId);
 ```
 
-## Variaveis principais
+Para adicionar outro master depois, repetir só o bloco de `AspNetUsers`/`AspNetUserRoles`
+reaproveitando o mesmo `@RoleId` (nao recriar a role).
 
-### Banco
+Depois de logado como master, o cadastro de Setores, Supervisores, Inspetores e Operadores e feito
+inteiramente pelas telas do Master
 
-```env
-ConnectionStrings__Default=Server=DESKTOP-6AUG6QN\SQLEXPRESS;Database=CheckFlowDatabase;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;
-```
 
-### Autenticacao
+## Validacao
 
-```env
-Authentication__Mode=ActiveDirectory
-ActiveDirectory__Domain=""
-ActiveDirectory__Container=""
-```
+### Master
 
-### Bind HTTP
-
-```env
-ASPNETCORE_URLS=http://0.0.0.0:8080
-```
-
-## Sequencia de deploy
-
-1. Configurar variaveis de ambiente da aplicacao MVC
-2. Validar conectividade com o SQL Server
-3. Definir o modo de autenticacao
-4. Subir a aplicacao
-5. Validar login administrativo
-6. Validar login operacional
-7. Validar fluxos criticos
-
-## Validacao recomendada
+- acesso a `/account/login` com login e senha do AD
+- redirecionamento para Master → Setores
+- cadastro de setor, supervisor, inspetor e operador funcionando
 
 ### Supervisor
 
 - acesso a `/account/login`
-- autenticacao bem sucedida
+- autenticacao bem sucedida via AD
 - dashboard carrega
 - catalogos carregam
 - itens non-compliant carregam
@@ -115,7 +107,7 @@ ASPNETCORE_URLS=http://0.0.0.0:8080
 
 - acesso a `/operacao`
 - redirecionamento correto para `/operador/login`
-- checklist abre por QR ID
+- checklist abre por QR ID (digitado ou lido pela camera)
 - checklist envia com assinatura
 
 ### STP
@@ -124,19 +116,3 @@ ASPNETCORE_URLS=http://0.0.0.0:8080
 - cadastro de areas
 - checklist STP
 - documentos
-
-## Observacoes operacionais
-
-- Nao existe endpoint `/health` dedicado na linha MVC atual.
-- O schema em SQL Server e criado/atualizado via EF Migrations (`Database.MigrateAsync`, ver
-  `mvc/src/Checklist.Infrastructure/Migrations`) no startup do app. `EnsureCreatedAsync` so e
-  usado no fallback InMemory (sem connection string configurada), que nao suporta migrations.
-- O projeto nao depende mais de Docker Compose para o fluxo local.
-
-## Referencias
-
-- [README.md](README.md)
-- [infra/README.md](infra/README.md)
-- [docs/architecture.md](docs/architecture.md)
-- [docs/api-overview.md](docs/api-overview.md)
-- [docs/sqlserver-corporate-migration-guide.md](docs/sqlserver-corporate-migration-guide.md)

@@ -5,9 +5,12 @@ namespace Checklist.Infrastructure.Services;
 
 public static class ActiveDirectoryService
 {
-    
-     private const string dominio = "schott.org";
-     private const string folders = "OU=Users,OU=RI1,OU=BR,DC=schott,DC=org";
+
+    //private const string dominio = "schott.org";
+    //private const string folders = "OU=Users,OU=RI1,OU=BR,DC=schott,DC=org";
+
+    private const string dominio = "localhost:389";
+    private const string folders = null;
 
     public static bool AuthenticateAD(string user, string password)
     {
